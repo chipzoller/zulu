@@ -1,4 +1,4 @@
-module github.com/kyverno/kyverno
+module github.com/chipzoller/zulu
 
 go 1.17
 
