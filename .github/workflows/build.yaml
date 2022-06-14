@@ -25,15 +25,15 @@ jobs:
     - name: Log in to GHCR
       uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2.0.0
       with:
-        registry: ghcr.io
+        registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Publish image and SBOM (CycloneDX)
       run: ko build ./ --bare --sbom=cyclonedx
       env:
-        KO_DOCKER_REPO: ghcr.io/chipzoller/zulu
+        KO_DOCKER_REPO: ${{ env.REGISTRY }}/${{ github.repository }}
     - name: Sign image
-      run: cosign sign --key env://COSIGN_PRIVATE_KEY ghcr.io/chipzoller/zulu
+      run: cosign sign --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTRY }}/${{ github.repository }}
       env:
         COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
@@ -58,7 +58,7 @@ jobs:
       uses: aquasecurity/trivy-action@4b9b6fb4ef28b31450391a93ade098bb00de584e # v0.3.0
       with: 
         # scan-type: 'image'
-        image-ref: ghcr.io/chipzoller/zulu
+        image-ref: ${{ env.REGISTRY }}/${{ github.repository }}
         format: 'json'
         ignore-unfixed: true
         # vuln-type: 'os,library'
@@ -96,27 +96,27 @@ jobs:
       with:
         cosign-release: 'v1.9.0'
     - name: Fetch SBOM
-      run: cosign download sbom ghcr.io/chipzoller/zulu > sbom.json
+      run: cosign download sbom ${{ env.REGISTRY }}/${{ github.repository }} > sbom.json
     - name: List files
       run: ls -lahF && cat provenance.json
     - name: Log in to GHCR
       uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2.0.0
       with:
-        registry: ghcr.io
+        registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Attest provenance
-      run: cosign attest --predicate provenance.json --type slsaprovenance --key env://COSIGN_PRIVATE_KEY ghcr.io/chipzoller/zulu
+      run: cosign attest --predicate provenance.json --type slsaprovenance --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTRY }}/${{ github.repository }}
       env:
         COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
     - name: Attest SBOM
-      run: cosign attest --predicate sbom.json --type https://cyclonedx.org/bom --key env://COSIGN_PRIVATE_KEY ghcr.io/chipzoller/zulu
+      run: cosign attest --predicate sbom.json --type https://cyclonedx.org/bom --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTRY }}/${{ github.repository }}
       env:
         COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
     - name: Attest Scan
-      run: cosign attest --predicate scan.json --type https://trivy.aquasec.com/scan/v2 --key env://COSIGN_PRIVATE_KEY ghcr.io/chipzoller/zulu
+      run: cosign attest --predicate scan.json --type https://trivy.aquasec.com/scan/v2 --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTRY }}/${{ github.repository }}
       env:
         COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
