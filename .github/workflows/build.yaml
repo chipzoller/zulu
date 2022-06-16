@@ -59,7 +59,7 @@ jobs:
       # evaluated-envs: "VERSION_LDFLAGS:${{needs.args.outputs.ldflags}}"
   scan:
     runs-on: ubuntu-20.04
-    needs: build
+    needs: [build, ko-publish]
     permissions:
       contents: read
     env:
@@ -92,7 +92,7 @@ jobs:
       packages: write
     env:
       IMAGE: "${{ needs.ko-publish.outputs.image }}"
-    needs: [build, scan]
+    needs: [build, scan, ko-publish]
     steps:
     - name: Download attestations
       uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # v3.0.0
