@@ -11,6 +11,8 @@ jobs:
     permissions:
       packages: write
       contents: read
+    outputs:
+      image: ${{ steps.ko-build.outputs.image }}
     steps:
     - name: Checkout code
       uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
@@ -31,11 +33,15 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Publish image and SBOM (CycloneDX)
-      run: ko build ./ --bare -t latest -t ${{ github.sha }} --sbom=cyclonedx
+      id: ko-build
+      run: |
+        IMAGE=$(ko build ./ --bare -t latest -t ${{ github.sha }} --sbom=cyclonedx)
+        echo "The image generated is: $IMAGE"
+        echo "::set-output name=image::$IMAGE"
       env:
         KO_DOCKER_REPO: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
     - name: Sign image
-      run: cosign sign --key env://COSIGN_PRIVATE_KEY -a sha=${{ github.sha }} -a run_id=${{ github.run_id }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      run: cosign sign --key env://COSIGN_PRIVATE_KEY -a sha=${{ github.sha }} -a run_id=${{ github.run_id }} $IMAGE
       env:
         COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
@@ -55,12 +61,14 @@ jobs:
     needs: build
     permissions:
       contents: read
+    env:
+      IMAGE: "${{ needs.ko-publish.outputs.image }}"
     steps:
     - name: Scan for vulnerabilities
       uses: aquasecurity/trivy-action@4b9b6fb4ef28b31450391a93ade098bb00de584e # v0.3.0
       with: 
         # scan-type: 'image'
-        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        image-ref: ${{ env.IMAGE }}
         format: 'json'
         ignore-unfixed: true
         # vuln-type: 'os,library'
@@ -81,6 +89,8 @@ jobs:
       contents: write
       actions: read
       packages: write
+    env:
+      IMAGE: "${{ needs.ko-publish.outputs.image }}"
     needs: [build, scan]
     steps:
     - name: Download attestations
@@ -98,7 +108,7 @@ jobs:
       with:
         cosign-release: 'v1.9.0'
     - name: Fetch SBOM
-      run: cosign download sbom ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} > sbom.json
+      run: cosign download sbom ${{ env.IMAGE }} > sbom.json
     # - name: List files
     #   run: ls -lahF && cat provenance.json
     - name: Log in to GHCR
@@ -108,17 +118,17 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Attest provenance
-      run: cosign attest --predicate provenance.json --type slsaprovenance --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      run: cosign attest --predicate provenance.json --type slsaprovenance --key env://COSIGN_PRIVATE_KEY ${{ env.IMAGE }}
       env:
         COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
     - name: Attest SBOM
-      run: cosign attest --predicate sbom.json --type https://cyclonedx.org/bom --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      run: cosign attest --predicate sbom.json --type https://cyclonedx.org/bom --key env://COSIGN_PRIVATE_KEY ${{ env.IMAGE }}
       env:
         COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
     - name: Attest Scan
-      run: cosign attest --predicate scan.json --type https://trivy.aquasec.com/scan/v2 --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      run: cosign attest --predicate scan.json --type https://trivy.aquasec.com/scan/v2 --key env://COSIGN_PRIVATE_KEY ${{ env.IMAGE }}
       env:
         COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
