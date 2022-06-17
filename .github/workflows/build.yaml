@@ -22,10 +22,6 @@ jobs:
         go-version: 1.18
     - name: Setup ko
       run: go install github.com/google/ko@cefd28f093ffb342237aa9d692eee247e82235d5 # v0.11.2
-    - name: Install Cosign
-      uses: sigstore/cosign-installer@7e0881f8fe90b25e305bbf0309761e9314607e25 # v2.4.0
-      with:
-        cosign-release: 'v1.9.0'
     - name: Log in to GHCR
       uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2.0.0
       with:
@@ -41,11 +37,6 @@ jobs:
         echo "::set-output name=image::$IMAGE"
       env:
         KO_DOCKER_REPO: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-    - name: Sign image
-      run: cosign sign --key env://COSIGN_PRIVATE_KEY -a sha=${{ github.sha }} -a run_id=${{ github.run_id }} ${{ env.IMAGE }}
-      env:
-        COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-        COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
   build:
     permissions:
       id-token: write
@@ -118,6 +109,11 @@ jobs:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Sign image
+      run: cosign sign --key env://COSIGN_PRIVATE_KEY -a sha=${{ github.sha }} -a run_id=${{ github.run_id }} ${{ env.IMAGE }}
+      env:
+        COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+        COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
     - name: Attest provenance
       run: cosign attest --predicate provenance.json --type slsaprovenance --key env://COSIGN_PRIVATE_KEY ${{ env.IMAGE }}
       env:
