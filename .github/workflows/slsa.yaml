@@ -41,7 +41,7 @@ jobs:
     - name: Set base64 encoded digest
       id: set-digest
       run: |
-        BASE64_DIGEST=$(echo -n $IMAGE | awk -F':' '{print $2}' | base64 -w0)
+        BASE64_DIGEST=$(echo -n $IMAGE image.tar | awk -F':' '{print $2}' | base64 -w0)
         echo "Base64 encoded digest from image is: $BASE64_DIGEST"
         echo "::set-output name=base64digest::$BASE64_DIGEST"
   # provenance:
