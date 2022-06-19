@@ -50,7 +50,7 @@ jobs:
     env:
       IMAGE: "${{ needs.ko-publish.outputs.image }}"
       BASE64DIGEST: "${{ needs.ko-publish.outputs.base64digest }}"
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v1.1.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@main
     with:
       base64-subjects: ${{ env.BASE64DIEGEST }}
       # attestation-name: binary-linux-amd64.intoto.jsonl
