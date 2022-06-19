@@ -43,7 +43,7 @@ jobs:
       contents: write
       actions: read
     needs: ko-publish
-    uses: slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@bbeae84f20f78877b7ba56f324b993c3ee576cf1 # v1.0.0. v1.1.0 failed with verification failed: error searching rekor entries: no matching entries found
+    uses: slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@bbeae84f20f78877b7ba56f324b993c3ee576cf1 # v1.0.0.
     with:
       go-version: 1.18
       # Optional: only needed if using ldflags.
