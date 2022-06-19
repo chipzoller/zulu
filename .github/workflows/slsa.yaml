@@ -53,6 +53,7 @@ jobs:
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@main
     with:
       base64-subjects: "${{ needs.ko-publish.outputs.base64digest }}"
+    outputs:
       attestation-name: binary-linux-amd64.intoto.jsonl
   scan:
     runs-on: ubuntu-20.04
