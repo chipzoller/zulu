@@ -36,7 +36,7 @@ jobs:
         echo "The image generated is: $IMAGE"
         echo "IMAGE=$IMAGE" >> $GITHUB_ENV
         echo "::set-output name=image::$IMAGE"
-        BASE64_DIGEST=$(echo $IMAGE | awk -F':' '{print $2}' | base64)
+        BASE64_DIGEST=$(echo -n $IMAGE | awk -F':' '{print $2}' | base64)
         echo "Base64 encoded digest from image is: $BASE64_DIGEST"
         echo "::set-output name=base64digest::$BASE64_DIEGEST"
       env:
