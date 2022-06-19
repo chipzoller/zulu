@@ -13,7 +13,7 @@ jobs:
       contents: read
     outputs:
       image: ${{ steps.ko-build.outputs.image }}
-      base64digest: ${{ steps.ko-build.outputs.base64digest }}
+      base64digest: ${{ steps.set-digest.outputs.base64digest }}
     steps:
     - name: Checkout code
       uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
@@ -36,12 +36,14 @@ jobs:
         echo "The image generated is: $IMAGE"
         echo "IMAGE=$IMAGE" >> $GITHUB_ENV
         echo "::set-output name=image::$IMAGE"
+      env:
+        KO_DOCKER_REPO: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+    - name: Set base64 encoded digest
+      id: set-digest
+      run: |
         BASE64_DIGEST=$(echo -n $IMAGE | awk -F':' '{print $2}' | base64 -w0)
         echo "Base64 encoded digest from image is: $BASE64_DIGEST"
         echo "::set-output name=base64digest::$BASE64_DIEGEST"
-      env:
-        KO_DOCKER_REPO: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-  
   # provenance:
   #   name: Do a test
   #   runs-on: ubuntu-20.04
@@ -54,7 +56,6 @@ jobs:
   #     id: check
   #     run: |
   #       echo ${{ needs.ko-publish.outputs.base64digest }}
-
   provenance:
     permissions:
       id-token: write
