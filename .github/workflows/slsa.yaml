@@ -52,8 +52,8 @@ jobs:
     #   BASE64DIGEST: "${{ needs.ko-publish.outputs.base64digest }}"
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@main
     with:
-      base64-subjects: MzUyMTIwNDZhYzVkZmU2MjEyMzFmNjE4NmViZjNjYTNjOWNlMGJkODRjOTc3ZmVmZDA4MmE2ODgzNmNjOGIxNAo= #${{ env.BASE64DIEGEST }}
-      # attestation-name: binary-linux-amd64.intoto.jsonl
+      base64-subjects: "${{ needs.ko-publish.outputs.base64digest }}"
+      attestation-name: binary-linux-amd64.intoto.jsonl
   scan:
     runs-on: ubuntu-20.04
     needs: [provenance, ko-publish]
