@@ -41,8 +41,8 @@ jobs:
         echo "::set-output name=base64digest::$BASE64_DIEGEST"
       env:
         KO_DOCKER_REPO: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-  test:
-    name: Release ko artifact
+  provenance:
+    name: Do a test
     runs-on: ubuntu-20.04
     needs: ko-publish
     permissions:
