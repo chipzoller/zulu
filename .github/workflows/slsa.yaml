@@ -42,7 +42,6 @@ jobs:
       env:
         KO_DOCKER_REPO: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
   provenance:
-    runs-on: ubuntu-20.04
     permissions:
       id-token: write
       contents: write
