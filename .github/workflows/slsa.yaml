@@ -36,33 +36,34 @@ jobs:
         echo "The image generated is: $IMAGE"
         echo "IMAGE=$IMAGE" >> $GITHUB_ENV
         echo "::set-output name=image::$IMAGE"
-        BASE64_DIGEST=$(echo -n $IMAGE | awk -F':' '{print $2}' | base64)
+        BASE64_DIGEST=$(echo -n $IMAGE | awk -F':' '{print $2}' | base64 -w0)
         echo "Base64 encoded digest from image is: $BASE64_DIGEST"
         echo "::set-output name=base64digest::$BASE64_DIEGEST"
       env:
         KO_DOCKER_REPO: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-  provenance:
-    name: Do a test
-    runs-on: ubuntu-20.04
-    needs: ko-publish
-    permissions:
-      packages: write
-      contents: read
-    steps:
-    - name: check output
-      id: check
-      run: |
-        echo ${{ needs.ko-publish.outputs.base64digest }}
-
+  
   # provenance:
-  #   permissions:
-  #     id-token: write
-  #     contents: write
-  #     actions: read
+  #   name: Do a test
+  #   runs-on: ubuntu-20.04
   #   needs: ko-publish
-  #   uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v1.1.0
-  #   with:
-  #     base64-subjects: "${{ needs.ko-publish.outputs.base64digest }}"
+  #   permissions:
+  #     packages: write
+  #     contents: read
+  #   steps:
+  #   - name: check output
+  #     id: check
+  #     run: |
+  #       echo ${{ needs.ko-publish.outputs.base64digest }}
+
+  provenance:
+    permissions:
+      id-token: write
+      contents: write
+      actions: read
+    needs: ko-publish
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v1.1.0
+    with:
+      base64-subjects: "${{ needs.ko-publish.outputs.base64digest }}"
   scan:
     runs-on: ubuntu-20.04
     needs: [provenance, ko-publish]
