@@ -1,6 +1,7 @@
 ### This workflow uses the SLSA generic provenenace generator workflow
 ### (see https://github.com/slsa-framework/slsa-github-generator/blob/main/internal/builders/generic/README.md)
-### to generate a SLSA provenance type predicate for a container image built by ko.
+### to generate a SLSA provenance type predicate for a container image built by ko and attesting to it and others
+### using a user-controlled key, stored as a secret in this GitHub repository, rather than keyless signing.
 name: slsa
 on: [push, workflow_dispatch]
 env:
@@ -47,6 +48,9 @@ jobs:
         BASE64_DIGEST=$(echo -n $IMAGE image.tar | awk -F':' '{print $2}' | base64 -w0)
         echo "Base64 encoded digest from image is: $BASE64_DIGEST"
         echo "::set-output name=base64digest::$BASE64_DIGEST"
+  # Use the generic SLSA provenance generator to create a provenance predicate by providing, as the subject,
+  # the hash of the image built by ko and a "dummy" filename called image.tar. The provenance, after attestation in the
+  # last job, can be verified by the digest of the image matching the subject's hash.
   provenance:
     permissions:
       id-token: write
@@ -56,6 +60,9 @@ jobs:
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v1.1.0
     with:
       base64-subjects: "${{ needs.ko-publish.outputs.base64digest }}"
+      # TODO: Specify a custom output file for the attestation JSONL file rather than accepting defaults.
+  # Scan the image using Trivy and add to it who produced the scan (i.e., "trivy") and a timestamp when
+  # the scan was produced.
   scan:
     runs-on: ubuntu-20.04
     needs: [provenance, ko-publish]
@@ -83,6 +90,7 @@ jobs:
         name: scan.json
         path: scan.json
         if-no-files-found: error
+  # Uses Cosign to sign and attest to the provenance, scans, and SBOM predicates.
   attest:
     runs-on: ubuntu-20.04
     permissions:
