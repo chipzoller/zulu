@@ -1,3 +1,6 @@
+### This workflow uses the SLSA generic provenenace generator workflow
+### (see https://github.com/slsa-framework/slsa-github-generator/blob/main/internal/builders/generic/README.md)
+### to generate a SLSA provenance type predicate for a container image built by ko.
 name: slsa
 on: [push, workflow_dispatch]
 env:
@@ -44,18 +47,6 @@ jobs:
         BASE64_DIGEST=$(echo -n $IMAGE image.tar | awk -F':' '{print $2}' | base64 -w0)
         echo "Base64 encoded digest from image is: $BASE64_DIGEST"
         echo "::set-output name=base64digest::$BASE64_DIGEST"
-  # provenance:
-  #   name: Do a test
-  #   runs-on: ubuntu-20.04
-  #   needs: ko-publish
-  #   permissions:
-  #     packages: write
-  #     contents: read
-  #   steps:
-  #   - name: check output
-  #     id: check
-  #     run: |
-  #       echo ${{ needs.ko-publish.outputs.base64digest }}
   provenance:
     permissions:
       id-token: write
