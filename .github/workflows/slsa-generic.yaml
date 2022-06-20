@@ -2,7 +2,7 @@
 ### (see https://github.com/slsa-framework/slsa-github-generator/blob/main/internal/builders/generic/README.md)
 ### to generate a SLSA provenance type predicate for a container image built by ko and attesting to it and others
 ### using a user-controlled key, stored as a secret in this GitHub repository, rather than keyless signing.
-name: slsa
+name: slsa-generic
 on: [push, workflow_dispatch]
 env:
   REGISTRY: ghcr.io

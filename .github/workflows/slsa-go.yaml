@@ -1,4 +1,4 @@
-name: build
+name: slsa-go
 on: [push, workflow_dispatch]
 env:
   REGISTRY: ghcr.io
