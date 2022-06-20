@@ -128,18 +128,18 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Sign image
-      run: cosign sign -a sha=${{ github.sha }} -a run_id=${{ github.run_id }} -a repo=${{ github.repository }} -a workflow=${{ github.workflow }} ${{ env.IMAGE }}
+      run: cosign sign -f -a sha=${{ github.sha }} -a run_id=${{ github.run_id }} -a repo=${{ github.repository }} -a workflow=${{ github.workflow }} ${{ env.IMAGE }}
       env:
         COSIGN_EXPERIMENTAL: "true"
     - name: Attest provenance
-      run: cosign attest --predicate provenance.json --type slsaprovenance ${{ env.IMAGE }}
+      run: cosign attest -f --predicate provenance.json --type slsaprovenance ${{ env.IMAGE }}
       env:
         COSIGN_EXPERIMENTAL: "true"
     - name: Attest SBOM
-      run: cosign attest --predicate sbom.json --type https://cyclonedx.org/bom ${{ env.IMAGE }}
+      run: cosign attest -f --predicate sbom.json --type https://cyclonedx.org/bom ${{ env.IMAGE }}
       env:
         COSIGN_EXPERIMENTAL: "true"
     - name: Attest Scan
-      run: cosign attest --predicate scan.json --type https://trivy.aquasec.com/scan/v2 ${{ env.IMAGE }}
+      run: cosign attest -f --predicate scan.json --type https://trivy.aquasec.com/scan/v2 ${{ env.IMAGE }}
       env:
         COSIGN_EXPERIMENTAL: "true"
