@@ -98,6 +98,7 @@ jobs:
       contents: write
       actions: read
       packages: write
+      id-token: write # Needed for OIDC and keyless signing
     env:
       IMAGE: "${{ needs.build.outputs.image }}"
     needs: [provenance, scan, build]
@@ -132,14 +133,14 @@ jobs:
       env:
         COSIGN_EXPERIMENTAL: "true"
     - name: Attest provenance
-      run: cosign attest -f --predicate provenance.json --type slsaprovenance ${{ env.IMAGE }}
+      run: cosign attest --predicate provenance.json --type slsaprovenance ${{ env.IMAGE }}
       env:
         COSIGN_EXPERIMENTAL: "true"
     - name: Attest SBOM
-      run: cosign attest -f --predicate sbom.json --type https://cyclonedx.org/bom ${{ env.IMAGE }}
+      run: cosign attest --predicate sbom.json --type https://cyclonedx.org/bom ${{ env.IMAGE }}
       env:
         COSIGN_EXPERIMENTAL: "true"
     - name: Attest Scan
-      run: cosign attest -f --predicate scan.json --type https://trivy.aquasec.com/scan/v2 ${{ env.IMAGE }}
+      run: cosign attest --predicate scan.json --type https://trivy.aquasec.com/scan/v2 ${{ env.IMAGE }}
       env:
         COSIGN_EXPERIMENTAL: "true"
