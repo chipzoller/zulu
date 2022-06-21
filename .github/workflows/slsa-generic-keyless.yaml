@@ -67,6 +67,8 @@ jobs:
     needs: [provenance, build]
     permissions:
       contents: read
+    outputs:
+      scan-digest: ${{ steps.calculate-scan-hash.outputs.scan_digest }}
     env:
       IMAGE: "${{ needs.build.outputs.image }}"
     steps:
@@ -83,6 +85,12 @@ jobs:
       uses: sergeysova/jq-action@9ac92a6da6d616b4cebdddc0059e36a1ad43fab1 # v2.1.0
       with:
         cmd: cat trivy-scan.json | jq '. + {timestamp:(now|todateiso8601)}' | jq '. + {scanner:"trivy"}' > scan.json
+    - name: Calculate scan file hash
+      id: calculate-scan-hash
+      run: |
+        SCAN_DIGEST=$(sha256sum scan.json | awk '{print $1}')
+        echo "::set-output name=scan_digest::$SCAN_DIGEST"
+        echo "Hash of scan.json is: $SCAN_DIGEST"
     # TODO: step which generates a hash of the previously-augmented scan report which is then checked in the
     # subsequent job to ensure tamper proof state prior to attestation.
     - name: Upload vulnerability scan report
@@ -101,6 +109,7 @@ jobs:
       id-token: write # Needed for OIDC and keyless signing
     env:
       IMAGE: "${{ needs.build.outputs.image }}"
+      SCAN_DIGEST: "${{ needs.scan.outputs.scan-digest }}"
     needs: [provenance, scan, build]
     steps:
     - name: Download attestations
@@ -111,6 +120,14 @@ jobs:
       uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # v3.0.0
       with:
         name: scan.json
+    - name: Verify scan
+      run: |
+        set -euo pipefail
+        echo "Hash of scan.json should be: $SCAN_DIGEST"
+        COMPUTED_HASH=$(sha256sum scan.json | awk '{print $1}')
+        echo "The current computed hash for scan.json is: $COMPUTED_HASH"
+        echo "If the two above hashes don't match, scan.json has been tampered with."
+        echo "$SCAN_DIGEST scan.json" | sha256sum --strict --check --status || exit -2
     - name: Strip predicate
       run: jq -r .payload attestation.intoto.jsonl | base64 --decode | jq .predicate > provenance.json
     - name: Install Cosign
