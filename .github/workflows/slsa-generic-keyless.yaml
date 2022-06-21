@@ -1,7 +1,7 @@
 ### This workflow uses the SLSA generic provenenace generator workflow
 ### (see https://github.com/slsa-framework/slsa-github-generator/blob/main/internal/builders/generic/README.md)
 ### to generate a SLSA provenance type predicate for a container image built by ko and attesting to it and others
-### using a user-controlled key, stored as a secret in this GitHub repository, rather than keyless signing.
+### using keyless signing.
 name: slsa-generic-keyless
 on: [push, workflow_dispatch]
 env:
@@ -41,15 +41,19 @@ jobs:
         echo "::set-output name=image::$IMAGE"
       env:
         KO_DOCKER_REPO: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+    # Creates a base64 encoded string in the format "<image_digest> <full_image_name>"
+    # for use as an input to the generic provenance generator. This input will be used as the subject
+    # in the generated provenance predicate but will later be replaced with the one Cosign sets as part
+    # the attest command. This step is included for completeness and until a formal image provenance generator is available.
     - name: Set base64 encoded digest
       id: set-digest
       run: |
         BASE64_DIGEST=$(echo $(echo -n $IMAGE | awk -F':' '{print $2}') $IMAGE | base64 -w0)
         echo "Base64 encoded digest from image is: $BASE64_DIGEST"
         echo "::set-output name=base64digest::$BASE64_DIGEST"
-  # Use the generic SLSA provenance generator to create a provenance predicate by providing, as the subject,
-  # the hash of the image built by ko and a "dummy" filename called image.tar. The provenance, after attestation in the
-  # last job, can be verified by the digest of the image matching the subject's hash.
+  # Use the generic SLSA provenance generator to create a provenance predicate. The subject filename here will
+  # equal the full image name (including digest), but this will later be stripped away in the attest job when
+  # cosign uses the full image name.
   provenance:
     permissions:
       id-token: write
@@ -60,8 +64,8 @@ jobs:
     with:
       base64-subjects: "${{ needs.build.outputs.base64digest }}"
       # TODO: Specify a custom output file for the attestation JSONL file rather than accepting defaults.
-  # Scan the image using Trivy and add to it who produced the scan (i.e., "trivy") and a timestamp when
-  # the scan was produced.
+  # Scan the image using Trivy and add new fields for the producer (i.e., "trivy") and a timestamp when
+  # the scan was made. Check the hash of the scan file to ensure no tampering between jobs.
   scan:
     runs-on: ubuntu-20.04
     needs: [provenance, build]
@@ -91,15 +95,13 @@ jobs:
         SCAN_DIGEST=$(sha256sum scan.json | awk '{print $1}')
         echo "::set-output name=scan_digest::$SCAN_DIGEST"
         echo "Hash of scan.json is: $SCAN_DIGEST"
-    # TODO: step which generates a hash of the previously-augmented scan report which is then checked in the
-    # subsequent job to ensure tamper proof state prior to attestation.
     - name: Upload vulnerability scan report
       uses: actions/upload-artifact@6673cd052c4cd6fcf4b4e6e60ea986c889389535 # v3.0.0
       with:
         name: scan.json
         path: scan.json
         if-no-files-found: error
-  # Uses Cosign to sign and attest to the provenance, scans, and SBOM predicates.
+  # Uses Cosign to sign and attest to the provenance, scans, and SBOM predicates. Uses keyless signing for all steps.
   attest:
     runs-on: ubuntu-20.04
     permissions:
@@ -120,6 +122,8 @@ jobs:
       uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # v3.0.0
       with:
         name: scan.json
+    # Detect potential tampering with the scan file by comparing the pre-upload digest in the previous
+    # job with the post-download digest in this job. Fail if there is a mismatch.
     - name: Verify scan
       run: |
         set -euo pipefail
@@ -136,7 +140,7 @@ jobs:
         cosign-release: 'v1.9.0'
     - name: Fetch SBOM
       run: cosign download sbom ${{ env.IMAGE }} > sbom.json
-    # optional troubleshooting step to show all files and show the cleaned provenance file
+    # Troubleshooting step to show all files and show the cleaned provenance file
     # - name: List files
     #   run: ls -lahF && cat provenance.json
     - name: Log in to GHCR
