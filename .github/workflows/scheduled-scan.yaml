@@ -36,6 +36,7 @@ jobs:
       contents: write
       actions: read
       packages: write
+      id-token: write
     needs: scan
     steps:
     - name: Download scan
@@ -55,7 +56,6 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Attest Scan
-      run: cosign attest --predicate scan.json --type https://trivy.aquasec.com/scan/v2 --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      run: cosign attest --replace --predicate scan.json --type https://trivy.aquasec.com/scan/v2 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
       env:
-        COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-        COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        COSIGN_EXPERIMENTAL: "true"
