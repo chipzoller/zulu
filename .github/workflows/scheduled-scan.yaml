@@ -17,7 +17,7 @@ jobs:
       uses: aquasecurity/trivy-action@4b9b6fb4ef28b31450391a93ade098bb00de584e # v0.3.0
       with: 
         # scan-type: 'image'
-        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
         format: 'json'
         ignore-unfixed: true
         # vuln-type: 'os,library'
