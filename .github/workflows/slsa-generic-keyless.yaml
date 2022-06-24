@@ -48,7 +48,7 @@ jobs:
     - name: Set base64 encoded digest
       id: set-digest
       run: |
-        BASE64_DIGEST=$(echo $(echo -n $IMAGE | awk -F':' '{print $2}') $IMAGE | base64 -w0)
+        BASE64_DIGEST=$(echo "$(echo -n $IMAGE | cut -d ':' -f2)  $(echo $IMAGE | cut -d '@' -f1)" | base64 -w0)
         echo "Base64 encoded digest from image is: $BASE64_DIGEST"
         echo "::set-output name=base64digest::$BASE64_DIGEST"
   # Use the generic SLSA provenance generator to create a provenance predicate. The subject filename here will
@@ -132,8 +132,8 @@ jobs:
         echo "The current computed hash for scan.json is: $COMPUTED_HASH"
         echo "If the two above hashes don't match, scan.json has been tampered with."
         echo "$SCAN_DIGEST scan.json" | sha256sum --strict --check --status || exit -2
-    - name: Strip predicate
-      run: jq -r .payload attestation.intoto.jsonl | base64 --decode | jq .predicate > provenance.json
+    # - name: Strip predicate
+    #   run: jq -r .payload attestation.intoto.jsonl | base64 --decode | jq .predicate > provenance.json
     - name: Install Cosign
       uses: sigstore/cosign-installer@7e0881f8fe90b25e305bbf0309761e9314607e25 # v2.4.0
       with:
@@ -153,8 +153,12 @@ jobs:
       run: cosign sign -a sha=${{ github.sha }} -a run_id=${{ github.run_id }} -a repo=${{ github.repository }} -a workflow=${{ github.workflow }} ${{ env.IMAGE }}
       env:
         COSIGN_EXPERIMENTAL: "true"
+    # - name: Attest provenance
+    #   run: cosign attest --predicate provenance.json --type slsaprovenance ${{ env.IMAGE }}
+    #   env:
+    #     COSIGN_EXPERIMENTAL: "true"
     - name: Attest provenance
-      run: cosign attest --predicate provenance.json --type slsaprovenance ${{ env.IMAGE }}
+      run: cosign attach attestation --attestation attestation.intoto.jsonl ${{ env.IMAGE }}
       env:
         COSIGN_EXPERIMENTAL: "true"
     - name: Attest SBOM
