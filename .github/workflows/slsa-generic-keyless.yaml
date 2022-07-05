@@ -166,18 +166,24 @@ jobs:
     - name: Attest provenance
       run: |
         cosign attach attestation --attestation attestation.intoto.jsonl ${{ env.IMAGE }}
+        echo "| Supply Chain Step | Status             |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------------------|--------------------|" >> $GITHUB_STEP_SUMMARY
         echo "| Image provenance attested      | :heavy_check_mark: |" >> $GITHUB_STEP_SUMMARY
       env:
         COSIGN_EXPERIMENTAL: "true"
     - name: Attest SBOM
       run: |
         cosign attest --predicate sbom.json --type https://cyclonedx.org/bom ${{ env.IMAGE }}
+        echo "| Supply Chain Step | Status             |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------------------|--------------------|" >> $GITHUB_STEP_SUMMARY
         echo "| Image SBOM attested      | :heavy_check_mark: |" >> $GITHUB_STEP_SUMMARY
       env:
         COSIGN_EXPERIMENTAL: "true"
     - name: Attest Scan
       run: |
         cosign attest --predicate scan.json --type https://trivy.aquasec.com/scan/v2 ${{ env.IMAGE }}
+        echo "| Supply Chain Step | Status             |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------------------|--------------------|" >> $GITHUB_STEP_SUMMARY
         echo "| Image vulnerability scan attested      | :heavy_check_mark: |" >> $GITHUB_STEP_SUMMARY
       env:
         COSIGN_EXPERIMENTAL: "true"
