@@ -155,7 +155,7 @@ jobs:
       run: |
         cosign sign -a sha=${{ github.sha }} -a run_id=${{ github.run_id }} -a repo=${{ github.repository }} -a workflow=${{ github.workflow }} ${{ env.IMAGE }}
         echo "## Supply Chain Summary" >> $GITHUB_STEP_SUMMARY
-        echo "Image signed :heavy_check_mark:" >> $GITHUB_STEP_SUMMARY
+        echo "Image signed: :heavy_check_mark:" >> $GITHUB_STEP_SUMMARY
       env:
         COSIGN_EXPERIMENTAL: "true"
     # - name: Attest provenance
