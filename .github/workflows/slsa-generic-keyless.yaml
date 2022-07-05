@@ -1,4 +1,4 @@
-### This workflow uses the SLSA generic provenenace generator workflow
+### This workflow uses the SLSA generic provenance generator workflow
 ### (see https://github.com/slsa-framework/slsa-github-generator/blob/main/internal/builders/generic/README.md)
 ### to generate a SLSA provenance type predicate for a container image built by ko and attesting to it and others
 ### using keyless signing.
@@ -37,7 +37,8 @@ jobs:
       run: |
         IMAGE=$(ko build ./ --bare -t latest -t ${{ github.sha }} --sbom=cyclonedx)
         echo "The image generated is: $IMAGE"
-        echo "The image generated is: $IMAGE" >> $GITHUB_STEP_SUMMARY
+        echo "## Image summary" >> $GITHUB_STEP_SUMMARY
+        echo "The image with digest generated from this action is $IMAGE" >> $GITHUB_STEP_SUMMARY
         echo "IMAGE=$IMAGE" >> $GITHUB_ENV
         echo "::set-output name=image::$IMAGE"
       env:
@@ -151,7 +152,11 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Sign image
-      run: cosign sign -a sha=${{ github.sha }} -a run_id=${{ github.run_id }} -a repo=${{ github.repository }} -a workflow=${{ github.workflow }} ${{ env.IMAGE }}
+      run: |
+        cosign sign -a sha=${{ github.sha }} -a run_id=${{ github.run_id }} -a repo=${{ github.repository }} -a workflow=${{ github.workflow }} ${{ env.IMAGE }}
+        echo "| Supply Chain Step | Status             |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------------------|--------------------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Image signed      | :heavy_check_mark: |" >> $GITHUB_STEP_SUMMARY
       env:
         COSIGN_EXPERIMENTAL: "true"
     # - name: Attest provenance
@@ -159,14 +164,20 @@ jobs:
     #   env:
     #     COSIGN_EXPERIMENTAL: "true"
     - name: Attest provenance
-      run: cosign attach attestation --attestation attestation.intoto.jsonl ${{ env.IMAGE }}
+      run: |
+        cosign attach attestation --attestation attestation.intoto.jsonl ${{ env.IMAGE }}
+        echo "| Image provenance attested      | :heavy_check_mark: |" >> $GITHUB_STEP_SUMMARY
       env:
         COSIGN_EXPERIMENTAL: "true"
     - name: Attest SBOM
-      run: cosign attest --predicate sbom.json --type https://cyclonedx.org/bom ${{ env.IMAGE }}
+      run: |
+        cosign attest --predicate sbom.json --type https://cyclonedx.org/bom ${{ env.IMAGE }}
+        echo "| Image SBOM attested      | :heavy_check_mark: |" >> $GITHUB_STEP_SUMMARY
       env:
         COSIGN_EXPERIMENTAL: "true"
     - name: Attest Scan
-      run: cosign attest --predicate scan.json --type https://trivy.aquasec.com/scan/v2 ${{ env.IMAGE }}
+      run: |
+        cosign attest --predicate scan.json --type https://trivy.aquasec.com/scan/v2 ${{ env.IMAGE }}
+        echo "| Image vulnerability scan attested      | :heavy_check_mark: |" >> $GITHUB_STEP_SUMMARY
       env:
         COSIGN_EXPERIMENTAL: "true"
