@@ -37,6 +37,7 @@ jobs:
       run: |
         IMAGE=$(ko build ./ --bare -t latest -t ${{ github.sha }} --sbom=cyclonedx)
         echo "The image generated is: $IMAGE"
+        echo "The image generated is: $IMAGE" >> $GITHUB_STEP_SUMMARY
         echo "IMAGE=$IMAGE" >> $GITHUB_ENV
         echo "::set-output name=image::$IMAGE"
       env:
