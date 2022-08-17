@@ -67,7 +67,7 @@ jobs:
       compile-generator: true
       digest: "${{ needs.build.outputs.digest }}"
       registry-username: ${{ github.actor }}
-      image: ${{ needs.build.outputs.image }}
+      image: ${{ env.IMAGE_NAME }}
     secrets:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
   # Scan the image using Trivy. Check the hash of the scan file to ensure no tampering between jobs.
