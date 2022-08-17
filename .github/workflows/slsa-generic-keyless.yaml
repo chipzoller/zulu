@@ -50,8 +50,9 @@ jobs:
         KO_DOCKER_REPO: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
     - name: Set digest
       id: set-digest
+      # output will be in format "sha256:<hash>"
       run: |
-        DIGEST=$(echo -n $IMAGE | cut -d ':' -f2)
+        DIGEST=$(echo -n $IMAGE | cut -d '@' -f2) 
         echo "Digest from image is: $DIGEST"
         echo "::set-output name=digest::$DIGEST"
   # Use the container SLSA provenance generator.
