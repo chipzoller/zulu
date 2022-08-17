@@ -48,11 +48,7 @@ jobs:
         echo "::set-output name=image::$IMAGE"
       env:
         KO_DOCKER_REPO: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-    # Creates a base64 encoded string in the format "<image_digest> <full_image_name>"
-    # for use as an input to the generic provenance generator. This input will be used as the subject
-    # in the generated provenance predicate but will later be replaced with the one Cosign sets as part
-    # the attest command. This step is included for completeness and until a formal image provenance generator is available.
-    - name: Set base64 encoded digest
+    - name: Set digest
       id: set-digest
       run: |
         DIGEST=$(echo -n $IMAGE | cut -d ':' -f2)
@@ -66,7 +62,7 @@ jobs:
       actions: read
       packages: write
     needs: build
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v1.2.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@main #1.2.0 failed
     with:
       compile-generator: true
       digest: "${{ needs.build.outputs.digest }}"
