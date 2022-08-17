@@ -38,6 +38,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Publish image and SBOM (CycloneDX)
       id: ko-build
+      # IMAGE will be in format <registry>/<repo>/<digest> ex ghcr.io/chipzoller/zulu@sha256:1b85db3f261af51914867eeda20a25bedf72fa406619bcdd60f0658f27b2722d
       run: |
         tag=$(echo ${{ github.ref }} | cut -c11-)
         IMAGE=$(ko build ./ --bare -t latest -t ${{ github.sha }} -t ${tag} --sbom=cyclonedx)
@@ -85,7 +86,7 @@ jobs:
     - name: Scan for vulnerabilities
       uses: aquasecurity/trivy-action@1db49f532692e649dc5dc43c7c0444dac4790137 # v0.7.0 (Trivy v0.31.2)
       with: 
-        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE }}
+        image-ref: ${{ env.IMAGE }}
         format: cosign-vuln
         ignore-unfixed: true
         output: scan.json
@@ -178,7 +179,7 @@ jobs:
         COSIGN_EXPERIMENTAL: "true"
     - name: Attest Scan
       run: |
-        cosign attest --predicate scan.json --type https://trivy.aquasec.com/scan/v2 ${{ env.IMAGE }}
+        cosign attest --predicate scan.json --type vuln ${{ env.IMAGE }}
         echo "Image vulnerability scan attested:  :heavy_check_mark:" >> $GITHUB_STEP_SUMMARY
       env:
         COSIGN_EXPERIMENTAL: "true"
