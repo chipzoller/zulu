@@ -66,7 +66,7 @@ jobs:
       actions: read
       packages: write
     needs: build
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v1.2.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@main
     with:
       compile-generator: true
       registry-username: ${{ github.actor }}
