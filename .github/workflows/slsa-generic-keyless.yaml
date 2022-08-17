@@ -106,7 +106,7 @@ jobs:
         echo "Hash of scan.json is: $SCAN_DIGEST"
 
     - name: Upload vulnerability scan report
-      uses: actions/upload-artifact@6673cd052c4cd6fcf4b4e6e60ea986c889389535 # v3.0.0
+      uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3.1.0
       with:
         name: scan.json
         path: scan.json
@@ -142,7 +142,7 @@ jobs:
         echo "$SCAN_DIGEST scan.json" | sha256sum --strict --check --status || exit -2
 
     - name: Install Cosign
-      uses: sigstore/cosign-installer@7e0881f8fe90b25e305bbf0309761e9314607e25 # v2.4.0
+      uses: sigstore/cosign-installer@09a077b27eb1310dcfb21981bee195b30ce09de0 # v2.5.0
       with:
         cosign-release: v1.10.0
 
