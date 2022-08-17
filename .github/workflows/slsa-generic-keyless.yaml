@@ -24,18 +24,22 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
+
     - name: Setup Golang
       uses: actions/setup-go@b22fbbc2921299758641fab08929b4ac52b32923 # v3.2.0
       with:
         go-version: 1.18
+
     - name: Setup ko
       run: go install github.com/google/ko@cefd28f093ffb342237aa9d692eee247e82235d5 # v0.11.2
+
     - name: Log in to GHCR
       uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2.0.0
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Publish image and SBOM (CycloneDX)
       id: ko-build
       # IMAGE will be in format <registry>/<repo>/<digest> ex ghcr.io/chipzoller/zulu@sha256:1b85db3f261af51914867eeda20a25bedf72fa406619bcdd60f0658f27b2722d
@@ -49,6 +53,7 @@ jobs:
         echo "::set-output name=image::$IMAGE"
       env:
         KO_DOCKER_REPO: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
     - name: Set digest
       id: set-digest
       # DIGEST will be in format sha256:<hash> ex sha256:1b85db3f261af51914867eeda20a25bedf72fa406619bcdd60f0658f27b2722d
@@ -56,6 +61,7 @@ jobs:
         DIGEST=$(echo -n $IMAGE | cut -d '@' -f2) 
         echo "Digest from image is: $DIGEST"
         echo "::set-output name=digest::$DIGEST"
+
   # Use the container SLSA provenance generator.
   provenance:
     permissions:
@@ -72,6 +78,7 @@ jobs:
       image: ghcr.io/${{ github.repository }}
     secrets:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
+
   # Scan the image using Trivy. Check the hash of the scan file to ensure no tampering between jobs.
   scan:
     runs-on: ubuntu-20.04
@@ -90,18 +97,21 @@ jobs:
         format: cosign-vuln
         ignore-unfixed: true
         output: scan.json
+
     - name: Calculate scan file hash
       id: calculate-scan-hash
       run: |
         SCAN_DIGEST=$(sha256sum scan.json | awk '{print $1}')
         echo "::set-output name=scan_digest::$SCAN_DIGEST"
         echo "Hash of scan.json is: $SCAN_DIGEST"
+
     - name: Upload vulnerability scan report
       uses: actions/upload-artifact@6673cd052c4cd6fcf4b4e6e60ea986c889389535 # v3.0.0
       with:
         name: scan.json
         path: scan.json
         if-no-files-found: error
+
   # Uses Cosign to sign and attest the scan and SBOM. Uses keyless signing for all steps.
   attest:
     runs-on: ubuntu-20.04
@@ -119,6 +129,7 @@ jobs:
       uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # v3.0.0
       with:
         name: scan.json
+
     # Detect potential tampering with the scan file by comparing the pre-upload digest in the previous
     # job with the post-download digest in this job. Fail if there is a mismatch.
     - name: Verify scan
@@ -129,18 +140,22 @@ jobs:
         echo "The current computed hash for scan.json is: $COMPUTED_HASH"
         echo "If the two above hashes don't match, scan.json has been tampered with."
         echo "$SCAN_DIGEST scan.json" | sha256sum --strict --check --status || exit -2
+
     - name: Install Cosign
       uses: sigstore/cosign-installer@7e0881f8fe90b25e305bbf0309761e9314607e25 # v2.4.0
       with:
         cosign-release: v1.10.0
+
     - name: Fetch SBOM
       run: cosign download sbom ${{ env.IMAGE }} > sbom.json
+
     - name: Log in to GHCR
       uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2.0.0
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Sign image
       run: |
         cosign sign -a sha=${{ github.sha }} -a run_id=${{ github.run_id }} -a repo=${{ github.repository }} -a workflow=${{ github.workflow }} ${{ env.IMAGE }}
@@ -148,12 +163,14 @@ jobs:
         echo "Image signed: :heavy_check_mark:" >> $GITHUB_STEP_SUMMARY
       env:
         COSIGN_EXPERIMENTAL: "true"
+
     - name: Attest SBOM
       run: |
         cosign attest --predicate sbom.json --type cyclonedx ${{ env.IMAGE }}
         echo "Image SBOM attested: :heavy_check_mark:" >> $GITHUB_STEP_SUMMARY
       env:
         COSIGN_EXPERIMENTAL: "true"
+
     - name: Attest Scan
       run: |
         cosign attest --predicate scan.json --type vuln ${{ env.IMAGE }}
