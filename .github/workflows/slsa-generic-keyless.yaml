@@ -52,27 +52,27 @@ jobs:
     # for use as an input to the generic provenance generator. This input will be used as the subject
     # in the generated provenance predicate but will later be replaced with the one Cosign sets as part
     # the attest command. This step is included for completeness and until a formal image provenance generator is available.
-    - name: Set base64 encoded digest
-      id: set-digest
-      run: |
-        BASE64_DIGEST=$(echo "$(echo -n $IMAGE | cut -d ':' -f2)  $(echo $IMAGE | cut -d '@' -f1)" | base64 -w0)
-        echo "Base64 encoded digest from image is: $BASE64_DIGEST"
-        echo "::set-output name=base64digest::$BASE64_DIGEST"
-  # Use the generic SLSA provenance generator to create a provenance predicate. The subject filename here will
-  # equal the full image name (including digest), but this will later be stripped away in the attest job when
-  # cosign uses the full image name.
+    # - name: Set base64 encoded digest
+    #   id: set-digest
+    #   run: |
+    #     BASE64_DIGEST=$(echo "$(echo -n $IMAGE | cut -d ':' -f2)  $(echo $IMAGE | cut -d '@' -f1)" | base64 -w0)
+    #     echo "Base64 encoded digest from image is: $BASE64_DIGEST"
+    #     echo "::set-output name=base64digest::$BASE64_DIGEST"
+  # Use the container SLSA provenance generator.
   provenance:
     permissions:
       id-token: write
       contents: write
       actions: read
     needs: build
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v1.1.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v1.2.0
     with:
-      base64-subjects: "${{ needs.build.outputs.base64digest }}"
-      # TODO: Specify a custom output file for the attestation JSONL file rather than accepting defaults.
-  # Scan the image using Trivy and add new fields for the producer (i.e., "trivy") and a timestamp when
-  # the scan was made. Check the hash of the scan file to ensure no tampering between jobs.
+      compile-generator: true
+      registry-username: ${{ github.actor }}
+      image: ${{ needs.build.outputs.image }}
+    secrets:
+      registry-password: ${{ secrets.GITHUB_TOKEN }}
+  # Scan the image using Trivy. Check the hash of the scan file to ensure no tampering between jobs.
   scan:
     runs-on: ubuntu-20.04
     needs: [provenance, build]
@@ -86,7 +86,7 @@ jobs:
     - name: Scan for vulnerabilities
       uses: aquasecurity/trivy-action@1db49f532692e649dc5dc43c7c0444dac4790137 # v0.7.0 (Trivy v0.31.2)
       with: 
-        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE }}
         format: cosign-vuln
         ignore-unfixed: true
         output: scan.json
@@ -119,10 +119,10 @@ jobs:
       SCAN_DIGEST: "${{ needs.scan.outputs.scan-digest }}"
     needs: [provenance, scan, build]
     steps:
-    - name: Download attestations
-      uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # v3.0.0
-      with:
-        name: attestation.intoto.jsonl
+    # - name: Download attestations
+    #   uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # v3.0.0
+    #   with:
+    #     name: attestation.intoto.jsonl
     - name: Download scan
       uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # v3.0.0
       with:
@@ -165,12 +165,12 @@ jobs:
     #   run: cosign attest --predicate provenance.json --type slsaprovenance ${{ env.IMAGE }}
     #   env:
     #     COSIGN_EXPERIMENTAL: "true"
-    - name: Attest provenance
-      run: |
-        cosign attach attestation --attestation attestation.intoto.jsonl ${{ env.IMAGE }}
-        echo "Image provenance attested: :heavy_check_mark:" >> $GITHUB_STEP_SUMMARY
-      env:
-        COSIGN_EXPERIMENTAL: "true"
+    # - name: Attest provenance
+    #   run: |
+    #     cosign attach attestation --attestation attestation.intoto.jsonl ${{ env.IMAGE }}
+    #     echo "Image provenance attested: :heavy_check_mark:" >> $GITHUB_STEP_SUMMARY
+    #   env:
+    #     COSIGN_EXPERIMENTAL: "true"
     - name: Attest SBOM
       run: |
         cosign attest --predicate sbom.json --type https://cyclonedx.org/bom ${{ env.IMAGE }}
