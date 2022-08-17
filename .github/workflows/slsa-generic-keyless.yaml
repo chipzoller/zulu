@@ -142,7 +142,7 @@ jobs:
     - name: Install Cosign
       uses: sigstore/cosign-installer@7e0881f8fe90b25e305bbf0309761e9314607e25 # v2.4.0
       with:
-        cosign-release: 'v1.10.0'
+        cosign-release: v1.10.0
     - name: Fetch SBOM
       run: cosign download sbom ${{ env.IMAGE }} > sbom.json
     # Troubleshooting step to show all files and show the cleaned provenance file
@@ -173,7 +173,7 @@ jobs:
     #     COSIGN_EXPERIMENTAL: "true"
     - name: Attest SBOM
       run: |
-        cosign attest --predicate sbom.json --type https://cyclonedx.org/bom ${{ env.IMAGE }}
+        cosign attest --predicate sbom.json --type cyclonedx ${{ env.IMAGE }}
         echo "Image SBOM attested: :heavy_check_mark:" >> $GITHUB_STEP_SUMMARY
       env:
         COSIGN_EXPERIMENTAL: "true"
