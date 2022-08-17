@@ -20,7 +20,7 @@ jobs:
       contents: read
     outputs:
       image: ${{ steps.ko-build.outputs.image }}
-      base64digest: ${{ steps.set-digest.outputs.base64digest }}
+      digest: ${{ steps.set-digest.outputs.digest }}
     steps:
     - name: Checkout code
       uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
@@ -52,12 +52,12 @@ jobs:
     # for use as an input to the generic provenance generator. This input will be used as the subject
     # in the generated provenance predicate but will later be replaced with the one Cosign sets as part
     # the attest command. This step is included for completeness and until a formal image provenance generator is available.
-    # - name: Set base64 encoded digest
-    #   id: set-digest
-    #   run: |
-    #     BASE64_DIGEST=$(echo "$(echo -n $IMAGE | cut -d ':' -f2)  $(echo $IMAGE | cut -d '@' -f1)" | base64 -w0)
-    #     echo "Base64 encoded digest from image is: $BASE64_DIGEST"
-    #     echo "::set-output name=base64digest::$BASE64_DIGEST"
+    - name: Set base64 encoded digest
+      id: set-digest
+      run: |
+        DIGEST=$(echo -n $IMAGE | cut -d ':' -f2)
+        echo "Digest from image is: $DIGEST"
+        echo "::set-output name=digest::$DIGEST"
   # Use the container SLSA provenance generator.
   provenance:
     permissions:
@@ -66,9 +66,10 @@ jobs:
       actions: read
       packages: write
     needs: build
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@main
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v1.2.0
     with:
       compile-generator: true
+      digest: "${{ needs.build.outputs.digest }}"
       registry-username: ${{ github.actor }}
       image: ${{ needs.build.outputs.image }}
     secrets:
