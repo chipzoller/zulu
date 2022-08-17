@@ -1,5 +1,5 @@
-### This workflow uses the SLSA generic provenance generator workflow
-### (see https://github.com/slsa-framework/slsa-github-generator/blob/main/internal/builders/generic/README.md)
+### This workflow uses the SLSA container provenance generator workflow
+### (see https://github.com/slsa-framework/slsa-github-generator/blob/main/internal/builders/container/README.md)
 ### to generate a SLSA provenance type predicate for a container image built by ko and attesting to it and others
 ### using keyless signing.
 name: slsa-generic-keyless
@@ -51,7 +51,7 @@ jobs:
         KO_DOCKER_REPO: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
     - name: Set digest
       id: set-digest
-      # output will be in format "sha256:<hash>"
+      # DIGEST will be in format sha256:<hash> ex sha256:1b85db3f261af51914867eeda20a25bedf72fa406619bcdd60f0658f27b2722d
       run: |
         DIGEST=$(echo -n $IMAGE | cut -d '@' -f2) 
         echo "Digest from image is: $DIGEST"
@@ -90,10 +90,6 @@ jobs:
         format: cosign-vuln
         ignore-unfixed: true
         output: scan.json
-    # - name: Add scan metadata
-    #   uses: sergeysova/jq-action@9ac92a6da6d616b4cebdddc0059e36a1ad43fab1 # v2.1.0
-    #   with:
-    #     cmd: cat trivy-scan.json | jq '. + {timestamp:(now|todateiso8601)}' | jq '. + {scanner:"trivy"}' > scan.json
     - name: Calculate scan file hash
       id: calculate-scan-hash
       run: |
@@ -106,7 +102,7 @@ jobs:
         name: scan.json
         path: scan.json
         if-no-files-found: error
-  # Uses Cosign to sign and attest to the provenance, scans, and SBOM predicates. Uses keyless signing for all steps.
+  # Uses Cosign to sign and attest the scan and SBOM. Uses keyless signing for all steps.
   attest:
     runs-on: ubuntu-20.04
     permissions:
@@ -119,10 +115,6 @@ jobs:
       SCAN_DIGEST: "${{ needs.scan.outputs.scan-digest }}"
     needs: [provenance, scan, build]
     steps:
-    # - name: Download attestations
-    #   uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # v3.0.0
-    #   with:
-    #     name: attestation.intoto.jsonl
     - name: Download scan
       uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # v3.0.0
       with:
@@ -137,17 +129,12 @@ jobs:
         echo "The current computed hash for scan.json is: $COMPUTED_HASH"
         echo "If the two above hashes don't match, scan.json has been tampered with."
         echo "$SCAN_DIGEST scan.json" | sha256sum --strict --check --status || exit -2
-    # - name: Strip predicate
-    #   run: jq -r .payload attestation.intoto.jsonl | base64 --decode | jq .predicate > provenance.json
     - name: Install Cosign
       uses: sigstore/cosign-installer@7e0881f8fe90b25e305bbf0309761e9314607e25 # v2.4.0
       with:
         cosign-release: v1.10.0
     - name: Fetch SBOM
       run: cosign download sbom ${{ env.IMAGE }} > sbom.json
-    # Troubleshooting step to show all files and show the cleaned provenance file
-    # - name: List files
-    #   run: ls -lahF && cat provenance.json
     - name: Log in to GHCR
       uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2.0.0
       with:
@@ -161,16 +148,6 @@ jobs:
         echo "Image signed: :heavy_check_mark:" >> $GITHUB_STEP_SUMMARY
       env:
         COSIGN_EXPERIMENTAL: "true"
-    # - name: Attest provenance
-    #   run: cosign attest --predicate provenance.json --type slsaprovenance ${{ env.IMAGE }}
-    #   env:
-    #     COSIGN_EXPERIMENTAL: "true"
-    # - name: Attest provenance
-    #   run: |
-    #     cosign attach attestation --attestation attestation.intoto.jsonl ${{ env.IMAGE }}
-    #     echo "Image provenance attested: :heavy_check_mark:" >> $GITHUB_STEP_SUMMARY
-    #   env:
-    #     COSIGN_EXPERIMENTAL: "true"
     - name: Attest SBOM
       run: |
         cosign attest --predicate sbom.json --type cyclonedx ${{ env.IMAGE }}
