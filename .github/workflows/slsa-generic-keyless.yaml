@@ -31,7 +31,7 @@ jobs:
         go-version: 1.18
 
     - name: Setup ko
-      run: go install github.com/google/ko@cefd28f093ffb342237aa9d692eee247e82235d5 # v0.11.2
+      run: go install github.com/google/ko@f9775dcf6b5f38f58cb15f6af7aed3f694bb9ae1 # v0.12.0
 
     - name: Log in to GHCR
       uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2.0.0
