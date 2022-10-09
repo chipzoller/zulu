@@ -59,6 +59,6 @@ jobs:
       - uses: JasonEtco/create-an-issue@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RESULTS: ${{ RESULTS }}
+          RESULTS: ${{ env.RESULTS }}
         with:
           filename: .github/VULN_TEMPLATE.md
