@@ -52,9 +52,17 @@ jobs:
       - name: Parse scan results
         id: parse-results
         run: |
+          VULNS=$(cat scan.json | jq '.Results[] | has("Vulnerabilities")')
+          if echo $VULNS | grep -q 'true'; then
+            echo "Vulnerabilities found, creating issue"
+          else
+            echo "No vulnerabilities found, halting"
+            exit 1
+          fi
           echo ::set-output name=results::$(cat scan.json)
 
       - uses: JasonEtco/create-an-issue@v2
+        if: steps.parse-results.conclusion == 'success'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RESULTS: ${{ steps.parse-results.outputs.results }}
