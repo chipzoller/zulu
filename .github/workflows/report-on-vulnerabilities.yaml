@@ -52,11 +52,11 @@ jobs:
       - name: Parse scan results
         id: parse-results
         run: |
-          echo "RESULTS=$(cat scan.json)" >> $GITHUB_ENV
+          echo ::set-output name=results::$(cat scan.json)
 
       - uses: JasonEtco/create-an-issue@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RESULTS: ${{ env.RESULTS }}
+          RESULTS: ${{ steps.parse-results.outputs.results }}
         with:
           filename: .github/VULN_TEMPLATE.md
