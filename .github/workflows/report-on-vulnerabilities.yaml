@@ -39,6 +39,8 @@ jobs:
 
   open-issue:
     runs-on: ubuntu-latest
+    outputs:
+      results: ${{ steps.parse-results.outputs.results }}
     steps:
       - name: Download scan
         uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # v3.0.0
@@ -54,6 +56,6 @@ jobs:
       - uses: JasonEtco/create-an-issue@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RESULTS: ${{ RESULTS }}
+          RESULTS: ${{ env.RESULTS }}
         with:
           filename: .github/VULN_TEMPLATE.md
