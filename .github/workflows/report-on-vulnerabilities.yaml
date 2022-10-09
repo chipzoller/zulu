@@ -57,9 +57,13 @@ jobs:
         with:
           name: scan.json
 
+      - name: Set scan output
+        id: set-scan-output
+        run: echo ::set-output name=results::$(cat scan.json)
+
       - uses: JasonEtco/create-an-issue@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RESULTS: ${{ steps.parse-results.outputs.results }}
+          RESULTS: ${{ steps.set-scan-output.outputs.results }}
         with:
           filename: .github/VULN_TEMPLATE.md
