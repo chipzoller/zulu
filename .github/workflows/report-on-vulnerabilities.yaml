@@ -1,0 +1,59 @@
+name: report-on-vulnerabilities
+on:
+  workflow_dispatch: {}
+  # schedule:
+  #   - cron: '23 2 * * *' # Every day at 02:23
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+jobs:
+  scan:
+    runs-on: ubuntu-20.04
+    permissions:
+      contents: read
+    outputs:
+      scan-digest: ${{ steps.calculate-scan-hash.outputs.scan_digest }}
+    steps:
+    - name: Scan for vulnerabilities
+      uses: aquasecurity/trivy-action@d63413b0a4a4482237085319f7f4a1ce99a8f2ac # v0.7.1 (Trivy v0.31.2)
+      with: 
+        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+        format: json
+        ignore-unfixed: false
+        severity: HIGH,CRITICAL
+        output: scan.json
+
+    # - name: Calculate scan file hash
+    #   id: calculate-scan-hash
+    #   run: |
+    #     SCAN_DIGEST=$(sha256sum scan.json | awk '{print $1}')
+    #     echo "::set-output name=scan_digest::$SCAN_DIGEST"
+    #     echo "Hash of scan.json is: $SCAN_DIGEST"
+
+    - name: Upload vulnerability scan report
+      uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3.1.0
+      with:
+        name: scan.json
+        path: scan.json
+        if-no-files-found: error
+
+  open-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download scan
+        uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # v3.0.0
+        with:
+          name: scan.json
+
+      - name: Parse scan results
+        id: parse-results
+        run: |
+          RESULTS=$(cat scan.json)
+          echo "::set-output name=results::$RESULTS"
+
+      - uses: JasonEtco/create-an-issue@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RESULTS: ${{ RESULTS }}
+        with:
+          filename: .github/VULN_TEMPLATE.md
