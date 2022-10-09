@@ -51,6 +51,7 @@ jobs:
 
       - name: Parse scan results
         id: parse-results
+        continue-on-error: true
         run: |
           VULNS=$(cat scan.json | jq '.Results[] | has("Vulnerabilities")')
           if echo $VULNS | grep -q 'true'; then
