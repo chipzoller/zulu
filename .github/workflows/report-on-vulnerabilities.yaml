@@ -17,7 +17,7 @@ jobs:
     - name: Scan for vulnerabilities
       uses: aquasecurity/trivy-action@d63413b0a4a4482237085319f7f4a1ce99a8f2ac # v0.7.1 (Trivy v0.31.2)
       with: 
-        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+        image-ref: ghcr.io/kyverno/kyverno:latest
         format: json
         ignore-unfixed: false
         severity: HIGH,CRITICAL
@@ -57,6 +57,6 @@ jobs:
       - uses: JasonEtco/create-an-issue@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RESULTS: ${{ toJSON(steps.parse-results.outputs.results) }}
+          RESULTS: ${{ steps.parse-results.outputs.results }}
         with:
           filename: .github/VULN_TEMPLATE.md
