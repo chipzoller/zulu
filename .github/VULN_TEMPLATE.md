@@ -1,5 +1,7 @@
 ---
-title: Vulnerabilities Detected
+title: Vulnerabilities detected
 labels: security
 ---
-High or critical vulnerabilities detected: {{ env.RESULTS }}
+High or critical vulnerabilities detected. Scan results are below:
+
+{{ env.RESULTS }}
