@@ -57,9 +57,7 @@ jobs:
         with:
           name: scan.json
 
-
       - uses: JasonEtco/create-an-issue@v2
-        if: steps.parse-results.conclusion == 'success'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RESULTS: ${{ steps.parse-results.outputs.results }}
