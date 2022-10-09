@@ -1,6 +1,5 @@
 ---
 title: Vulnerabilities Detected
-# assignees: JasonEtco, matchai
 labels: security
 ---
-High or critical vulnerabilities detected: {{ env.RESULTS }}.
+High or critical vulnerabilities detected: {{ fromJSON(env.RESULTS) }}.
