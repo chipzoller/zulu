@@ -40,8 +40,8 @@ jobs:
   open-issue:
     runs-on: ubuntu-latest
     needs: scan
-    outputs:
-      results: ${{ steps.parse-results.outputs.results }}
+    # outputs:
+    #   results: ${{ steps.parse-results.outputs.results }}
     steps:
       - uses: actions/checkout@v2
       - name: Download scan
@@ -54,6 +54,7 @@ jobs:
         run: |
           RESULTS=$(cat scan.json)
           echo "::set-output name=results::$RESULTS"
+          echo "RESULTS=$RESULTS" >> $GITHUB_ENV
 
       - uses: JasonEtco/create-an-issue@v2
         env:
