@@ -5,7 +5,7 @@ on:
   #   - cron: '23 2 * * *' # Every day at 02:23
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: kyverno/kyverno # ${{ github.repository }}
+  IMAGE_NAME: ${{ github.repository }}
 jobs:
   scan:
     runs-on: ubuntu-20.04
@@ -38,7 +38,7 @@ jobs:
 
     - name: Upload vulnerability scan report
       uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3.1.0
-      # if: contains(steps.parse-results.outputs.results, 'SchemaVersion')
+      if: contains(steps.parse-results.outputs.results, 'SchemaVersion')
       with:
         name: scan.json
         path: scan.json
