@@ -9,7 +9,7 @@ permissions: {}
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: kyverno/kyverno
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   scan:
