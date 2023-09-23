@@ -2,7 +2,7 @@ name: test native tools
 on:
   workflow_dispatch: {}
 jobs:
-  scan:
+  clis:
     runs-on: ubuntu-latest
     steps:
     - name: gh
