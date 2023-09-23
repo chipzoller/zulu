@@ -9,3 +9,9 @@ jobs:
       run: gh version
     - name: helm
       run: helm version
+    - name: aws
+      run: aws version
+    - name: gcloud
+      run: gcloud version
+    - name: python
+      run: python3 --version
