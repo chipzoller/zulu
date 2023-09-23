@@ -13,5 +13,5 @@ jobs:
       run: aws --version
     - name: gcloud
       run: gcloud version
-    - name: python
+    - name: python3
       run: python3 --version
