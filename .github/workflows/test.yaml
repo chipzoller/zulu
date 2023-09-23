@@ -10,7 +10,7 @@ jobs:
     - name: helm
       run: helm version
     - name: aws
-      run: aws version
+      run: aws --version
     - name: gcloud
       run: gcloud version
     - name: python
