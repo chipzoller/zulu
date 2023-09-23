@@ -6,6 +6,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: gh
-      run: gh --help
+      run: gh version
     - name: helm
-      run: helm --help
+      run: helm version
