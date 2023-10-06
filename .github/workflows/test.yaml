@@ -19,8 +19,8 @@ jobs:
       run: go version
     - name: Checkout
       uses: actions/checkout@v4
-      # with:
+      with:
       #   repository: 'kubecost/release-scripts'
-      #   path: './release-scripts'
+        path: ./zulu
     - name: See checkout
       run: ls -l .
