@@ -49,4 +49,4 @@ jobs:
         echo '#### npm version ####'
         npm version
         echo '#### manifest-tool version ####'
-        ./manifest-tool/manifest-tool version
+        manifest-tool --version
