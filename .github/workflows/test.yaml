@@ -17,5 +17,3 @@ jobs:
       run: python3 --version
     - name: go
       run: go version
-    - name: just
-      run: just version
