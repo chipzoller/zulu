@@ -25,7 +25,7 @@ jobs:
       run: |
         mkdir -p manifest-tool
         pushd manifest-tool
-        wget https://github.com/estesp/manifest-tool/releases/download/v2.0.8/binaries-manifest-tool-2.0.8.tar.gz
+        wget -q https://github.com/estesp/manifest-tool/releases/download/v2.0.8/binaries-manifest-tool-2.0.8.tar.gz
         tar -xzf binaries-manifest-tool-2.0.8.tar.gz
         cp manifest-tool-linux-amd64 manifest-tool
         echo "$(pwd)" >> $GITHUB_PATH
@@ -48,5 +48,3 @@ jobs:
         just --version
         echo '#### npm version ####'
         npm version
-        echo '#### manifest-tool version ####'
-        manifest-tool version
