@@ -30,4 +30,5 @@ jobs:
         aws --version
         python3 --version
         just --version
+        echo '### npm version'
         npm version
