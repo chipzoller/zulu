@@ -21,3 +21,12 @@ jobs:
       uses: extractions/setup-just@v1
     - name: just
       run: just --version
+    - name: Check all tool versions
+      run: |
+        gh version
+        go version
+        helm version
+        gcloud version
+        aws --version
+        python3 --version
+        just --version
