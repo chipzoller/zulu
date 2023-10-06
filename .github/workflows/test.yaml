@@ -21,14 +21,32 @@ jobs:
       uses: extractions/setup-just@v1
     - name: just
       run: just --version
+    - name: Install manifest-tool
+      run: |
+        mkdir -p manifest-tool
+        pushd manifest-tool
+        wget https://github.com/estesp/manifest-tool/releases/download/v2.0.8/binaries-manifest-tool-2.0.8.tar.gz
+        tar -xzf binaries-manifest-tool-2.0.8.tar.gz
+        cp manifest-tool-linux-amd64 manifest-tool
+        echo "$(pwd)" >> $GITHUB_PATH
+
     - name: Check all tool versions
       run: |
+        echo '#### gh version ####'
         gh version
+        echo '#### go version ####'
         go version
+        echo '#### helm version ####'
         helm version
+        echo '#### gcloud version ####'
         gcloud version
+        echo '#### aws version ####'
         aws --version
+        echo '#### python3 version ####'
         python3 --version
+        echo '#### just version ####'
         just --version
-        echo '### npm version'
+        echo '#### npm version ####'
         npm version
+        echo '#### manifest-tool version ####'
+        manifest-tool version
