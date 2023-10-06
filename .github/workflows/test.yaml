@@ -15,3 +15,5 @@ jobs:
       run: gcloud version
     - name: python3
       run: python3 --version
+    - name: go
+      run: go version
