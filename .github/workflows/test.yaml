@@ -48,3 +48,5 @@ jobs:
         just --version
         echo '#### npm version ####'
         npm version
+        echo '#### manifest-tool version ####'
+        ./manifest-tool/manifest-tool version
