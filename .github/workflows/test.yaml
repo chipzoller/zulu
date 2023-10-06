@@ -30,3 +30,4 @@ jobs:
         aws --version
         python3 --version
         just --version
+        npm version
