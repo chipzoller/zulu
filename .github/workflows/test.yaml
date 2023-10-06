@@ -17,10 +17,7 @@ jobs:
       run: python3 --version
     - name: go
       run: go version
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-      #   repository: 'kubecost/release-scripts'
-        path: ./zulu
-    - name: See checkout
-      run: ls -l .
+    - name: Install just
+      uses: extractions/setup-just@v1
+    - name: just
+      run: just version
