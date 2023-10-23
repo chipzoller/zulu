@@ -2,7 +2,6 @@
     "name": "Default",
     "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
     "features": {
-        "ghcr.io/meaningful-ooo/devcontainer-features/homebrew:2": {},
         "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {}
     }
 }

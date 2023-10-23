@@ -1,7 +1,7 @@
 {
-    "name": "With Cluster",
+    "name": "Cluster",
     "build": {
-        "dockerfile": "Dockerfile-cluster"
+        "dockerfile": "Dockerfile"
     },
     "remoteUser": "root",
     "mounts": ["source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"],
