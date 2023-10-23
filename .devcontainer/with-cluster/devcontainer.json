@@ -1,16 +1,4 @@
 {
-    "name": "Bare",
-    "build": {
-        "dockerfile": "Dockerfile-bare"
-    },
-    "remoteUser": "root",
-    "mounts": ["source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"],
-    "runArgs": ["--privileged", "--network=host", "-p", "22:22", "-p", "80:80", "-p", "2375:2375", "-p", "8443:8443"],
-    "features": {
-        "ghcr.io/meaningful-ooo/devcontainer-features/homebrew:2": {}
-    }
-}
-{
     "name": "With Cluster",
     "build": {
         "dockerfile": "Dockerfile-cluster"
