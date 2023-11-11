@@ -18,12 +18,12 @@ jobs:
           cluster-name: foo
           timeout-minutes: 5
           ttl: 10m
+          export-kubeconfig: true
 
       - name: Test
         run: |
           echo "Running a test"
-          echo "${{ steps.create-cluster.outputs.cluster-kubeconfig }}" > kubeconfig.yaml
-          kubectl --kubeconfig kubeconfig.yaml get pods -A
+          kubectl get po -A
 
       - name: Remove Cluster
         id: remove-cluster
