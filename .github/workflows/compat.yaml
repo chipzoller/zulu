@@ -14,7 +14,7 @@ jobs:
         with:
           api-token: ${{ secrets.REPLICATED_API_TOKEN }}
           kubernetes-distribution: openshift # eks
-          kubernetes-version: "1.25"
+          kubernetes-version: 4.13.0-okd # for eks "1.25"
           cluster-name: foo
           timeout-minutes: 5
           ttl: 10m
