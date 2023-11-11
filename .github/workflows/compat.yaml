@@ -7,12 +7,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Outputs: `cluster-kubeconfig`, `cluster-id`
       - name: Create Cluster
         id: create-cluster
         uses: replicatedhq/compatibility-actions/create-cluster@v1
         with:
           api-token: ${{ secrets.REPLICATED_API_TOKEN }}
-          kubernetes-distribution: eks
+          kubernetes-distribution: openshift # eks
           kubernetes-version: "1.25"
           cluster-name: foo
           timeout-minutes: 5
@@ -23,3 +24,11 @@ jobs:
           echo "Running a test"
           echo "${{ steps.create-cluster.outputs.cluster-kubeconfig }}" > kubeconfig.yaml
           kubectl --kubeconfig kubeconfig.yaml get pods -A
+
+      - name: Remove Cluster
+        id: remove-cluster
+        uses: replicatedhq/compatibility-actions/remove-cluster@v1
+        continue-on-error: true
+        with:
+          api-token: ${{ secrets.REPLICATED_API_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
