@@ -15,7 +15,7 @@ jobs:
           kubernetes-distribution: eks
           kubernetes-version: "1.25"
           cluster-name: foo
-          timeout-minutes: 2
+          timeout-minutes: 5
           ttl: 10m
 
       - name: Test
