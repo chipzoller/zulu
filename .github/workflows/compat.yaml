@@ -1,0 +1,25 @@
+name: test-cluster
+on:
+  workflow_dispatch: {}
+jobs:
+  cluster:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Cluster
+        id: create-cluster
+        uses: replicatedhq/compatibility-actions/create-cluster@v1
+        with:
+          api-token: ${{ secrets.REPLICATED_API_TOKEN }}
+          kubernetes-distribution: eks
+          kubernetes-version: "1.25"
+          cluster-name: foo
+          timeout-minutes: 2
+          ttl: 10m
+
+      - name: Test
+        run: |
+          echo "Running a test"
+          echo "${{ steps.create-cluster.outputs.cluster-kubeconfig }}" > kubeconfig.yaml
+          kubectl --kubeconfig kubeconfig.yaml get pods -A
