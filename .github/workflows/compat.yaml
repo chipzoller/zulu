@@ -19,6 +19,7 @@ jobs:
           timeout-minutes: 5
           ttl: 10m
           export-kubeconfig: true
+          # kubeconfig-path: /tmp/kubeconfig # optional, specifies path for Kubeconfig file
 
       - name: Test
         run: |
