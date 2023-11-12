@@ -47,6 +47,10 @@ jobs:
             echo "A newer tag has been discovered. The new tag is ${{ steps.read-gist.outputs.content }} while the current tag is ${{env.LATEST}}. Will proceed with a release."
             echo is_newer=true >> $GITHUB_ENV
           fi
+      - name: Show vars
+        id: show-vars
+        run: |
+          echo $GITHUB_ENV
 
   release:
     needs: discover-new-tags
