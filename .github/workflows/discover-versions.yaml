@@ -9,6 +9,13 @@ jobs:
     steps:
       - name: Install oras
         uses: oras-project/setup-oras@v1
+      # Get the latest tag from the specified IMAGE_REPO var but only return the latest version
+      # which matches the pattern "prod-1.x.x", not any pre-releases or other tags.
       - name: Discover versions
         run: |
           oras repo tags $IMAGE_REPO | egrep '^prod-1.[0-9]+.[0-9]+$' | sort -t "." -k1,1n -k2,2n -k3,3n | tail -n1
+      - uses: sergeysova/gist-write-action@v1
+        with:
+          gist_id: 5bb3e010e5817903768c381c017cfcb4
+          file_name: last.txt
+          content: "100"
