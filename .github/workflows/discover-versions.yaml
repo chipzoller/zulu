@@ -28,8 +28,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
         with:
-          gist_id: $GIST
-          file_name: $GIST_FILE
+          gist_id: ${{env.GIST}}
+          file_name: ${{env.GIST_FILE}}
       - name: Show current version from Gist
         run: |
           echo "Current version is: ${{ steps.gist.outputs.content }}"
@@ -40,6 +40,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
         with:
-          gist_id: $GIST
-          file_name: $GIST_FILE
+          gist_id: ${{env.GIST}}
+          file_name: ${{env.GIST_FILE}}
           content: $LATEST
