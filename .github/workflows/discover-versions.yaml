@@ -9,8 +9,6 @@ env:
   GIST: 5bb3e010e5817903768c381c017cfcb4
   # The gist file name to use for storing the last discovered version.
   GIST_FILE: last.txt
-outputs:
-  is_newer: 
 jobs:
   discover-new-tags:
     runs-on: ubuntu-latest
