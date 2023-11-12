@@ -44,14 +44,14 @@ jobs:
             echo "No newer tag found. Exiting."
             exit 0
           else
-            echo "A newer tag has been discovered. The new tag is ${{ steps.read-gist.outputs.content }} while the current tag is ${{env.LATEST}}."
+            echo "A newer tag has been discovered. The new tag is ${{ steps.read-gist.outputs.content }} while the current tag is ${{env.LATEST}}. Will proceed with a release."
             echo is_newer=true >> $GITHUB_ENV
           fi
 
   release:
     needs: discover-new-tags
     uses: ./.github/workflows/demo-releaser.yaml
-    if: needs.discover-new-tags.outputs.is_newer == 'true'
+    if: needs.discover-new-tags.outputs.is_newer == true
     with:
       tag: ${{vars.LATEST}}
 
