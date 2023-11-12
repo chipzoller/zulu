@@ -1,3 +1,4 @@
+# Requires a secret called MY_TOKEN to be set in the repo with a GitHub token that has gist permissions for read and write.
 name: discover-versions
 on:
   workflow_dispatch: {}
@@ -42,4 +43,4 @@ jobs:
         with:
           gist_id: ${{env.GIST}}
           file_name: ${{env.GIST_FILE}}
-          content: $LATEST
+          content: ${{env.LATEST}}
