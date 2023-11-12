@@ -55,7 +55,7 @@ jobs:
   release:
     needs: discover-new-tags
     uses: ./.github/workflows/demo-releaser.yaml
-    if: needs.discover-new-tags.outputs.is_newer == true
+    if: needs.discover-new-tags.outputs.is_newer == 'true'
     with:
       tag: ${{vars.LATEST}}
 
