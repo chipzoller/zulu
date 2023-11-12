@@ -3,18 +3,25 @@ name: discover-versions
 on:
   workflow_dispatch: {}
 env:
+  # The image repository to use for discovering tags.
   IMAGE_REPO: gcr.io/kubecost1/cost-model
+  # The gist ID to use for storing the last discovered version.
   GIST: 5bb3e010e5817903768c381c017cfcb4
+  # The gist file name to use for storing the last discovered version.
   GIST_FILE: last.txt
+outputs:
+  is_newer: 
 jobs:
-  discover:
+  discover-new-tags:
     runs-on: ubuntu-latest
+    outputs:
+      is_newer: ${{ steps.compare-tags.outputs.is_newer }}    
     steps:
-      - name: Install oras
+      - name: Install oras CLI
         uses: oras-project/setup-oras@v1
       # Get the latest tag from the specified IMAGE_REPO var but only return the latest version
       # which matches the pattern "prod-1.x.x", not any pre-releases or other tags.
-      - name: Discover versions
+      - name: Discover latest tag
         run: |
           LATEST=$(oras repo tags $IMAGE_REPO | egrep '^prod-1.[0-9]+.[0-9]+$' | sort -t "." -k1,1n -k2,2n -k3,3n | tail -n1)
           if [ -z "$LATEST" ]; then
@@ -24,19 +31,37 @@ jobs:
             echo "Latest discovered production tag is: $LATEST"
             echo LATEST=$LATEST >> $GITHUB_ENV
           fi
-      - uses: sergeysova/gist-read-action@v1
-        id: gist
+      - name: Read current tag from gist
+        uses: sergeysova/gist-read-action@v1
+        id: read-gist
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
         with:
           gist_id: ${{env.GIST}}
           file_name: ${{env.GIST_FILE}}
-      - name: Show current version from Gist
+      - name: Compare latest tag to current tag from gist
+        id: compare-tags
         run: |
-          echo "Current version is: ${{ steps.gist.outputs.content }}"
-      - name: Do something here conditionally
-        run: echo "We're doing some work here."
-      - name: Updating gist when work successful
+          if [ "${{env.LATEST}}" = "${{ steps.read-gist.outputs.content }}" ]; then
+            echo "No newer tag found. Exiting."
+            exit 0
+          else
+            echo "A newer tag has been discovered. The new tag is ${{ steps.read-gist.outputs.content }} while the current tag is ${{env.LATEST}}."
+            echo is_newer=true >> $GITHUB_ENV
+          fi
+
+  release:
+    needs: discover-new-tags
+    uses: ./.github/workflows/demo-releaser.yaml
+    if: needs.discover-new-tags.outputs.is_newer == 'true'
+    with:
+      tag: ${{env.LATEST}}
+
+  mark-version-complete:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Updating current tag after successful release
         uses: sergeysova/gist-write-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
