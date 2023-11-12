@@ -15,6 +15,8 @@ jobs:
         run: |
           oras repo tags $IMAGE_REPO | egrep '^prod-1.[0-9]+.[0-9]+$' | sort -t "." -k1,1n -k2,2n -k3,3n | tail -n1
       - uses: sergeysova/gist-write-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           gist_id: 5bb3e010e5817903768c381c017cfcb4
           file_name: last.txt
