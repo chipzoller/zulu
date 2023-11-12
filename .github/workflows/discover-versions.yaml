@@ -11,4 +11,4 @@ jobs:
         uses: oras-project/setup-oras@v1
       - name: Discover versions
         run: |
-          oras repo tags $IMAGE_REPO | egrep '^prod-1.[0-9]+.[0-9]+$' tags.txt | sort -t "." -k1,1n -k2,2n -k3,3n | tail -n1
+          oras repo tags $IMAGE_REPO | egrep '^prod-1.[0-9]+.[0-9]+$' | sort -t "." -k1,1n -k2,2n -k3,3n | tail -n1
