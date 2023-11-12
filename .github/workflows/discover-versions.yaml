@@ -3,6 +3,8 @@ on:
   workflow_dispatch: {}
 env:
   IMAGE_REPO: gcr.io/kubecost1/cost-model
+  GIST: 5bb3e010e5817903768c381c017cfcb4
+  GIST_FILE: last.txt
 jobs:
   discover:
     runs-on: ubuntu-latest
@@ -13,11 +15,29 @@ jobs:
       # which matches the pattern "prod-1.x.x", not any pre-releases or other tags.
       - name: Discover versions
         run: |
-          oras repo tags $IMAGE_REPO | egrep '^prod-1.[0-9]+.[0-9]+$' | sort -t "." -k1,1n -k2,2n -k3,3n | tail -n1
-      - uses: sergeysova/gist-write-action@v1
+          LATEST=$(oras repo tags $IMAGE_REPO | egrep '^prod-1.[0-9]+.[0-9]+$' | sort -t "." -k1,1n -k2,2n -k3,3n | tail -n1)
+          if [ -z "$LATEST" ]; then
+            echo "No production tags found for $IMAGE_REPO. Something is wrong. Failing."
+            exit 1
+          else
+            echo "Latest discovered production tag is: $LATEST"
+            echo LATEST=$LATEST >> $GITHUB_ENV
+          fi
+      - uses: sergeysova/gist-read-action@v1
+        id: gist
+        with:
+          gist_id: $GIST
+          file_name: $GIST_FILE
+      - name: Show current version from Gist
+        run: |
+          echo "Current version is: ${{ steps.gist.outputs.content }}"
+      - name: Do something here conditionally
+        run: echo "We're doing some work here."
+      - name: Updating gist when work successful
+        uses: sergeysova/gist-write-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
         with:
-          gist_id: 5bb3e010e5817903768c381c017cfcb4
-          file_name: last.txt
-          content: "100"
+          gist_id: $GIST
+          file_name: $GIST_FILE
+          content: $LATEST
