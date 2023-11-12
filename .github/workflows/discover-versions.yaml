@@ -25,6 +25,8 @@ jobs:
           fi
       - uses: sergeysova/gist-read-action@v1
         id: gist
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
         with:
           gist_id: $GIST
           file_name: $GIST_FILE
