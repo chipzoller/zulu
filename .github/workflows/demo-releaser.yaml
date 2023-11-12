@@ -11,4 +11,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Do something
-      run: echo "Doing something with tag ${{env.tag}}."
+      run: echo "Doing something with tag ${{inputs.tag}}."
