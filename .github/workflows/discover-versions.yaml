@@ -72,4 +72,4 @@ jobs:
         with:
           gist_id: ${{env.GIST}}
           file_name: ${{env.GIST_FILE}}
-          content: ${{env.LATEST}}
+          content: ${{needs.discover-new-tags.outputs.latest}}
