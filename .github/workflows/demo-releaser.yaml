@@ -1,11 +1,11 @@
 name: Demo releaser
 on:
   workflow_call:
-    inputs:
-      tag:
-        description: The newly-discovered tag which invokes a new release.
-        required: true
-        type: string
+    # inputs:
+    #   tag:
+    #     description: The newly-discovered tag which invokes a new release.
+    #     required: true
+    #     type: string
 jobs:
   release:
     runs-on: ubuntu-latest
