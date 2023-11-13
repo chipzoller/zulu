@@ -45,7 +45,7 @@ jobs:
             exit 0
           else
             echo "A newer tag has been discovered. The new tag is ${{ steps.read-gist.outputs.content }} while the current tag is ${{env.LATEST}}. Will proceed with a release."
-            echo is_newer=dog >> $GITHUB_ENV
+            echo is_newer=true >> $GITHUB_OUTPUT
           fi
       - name: Show vars
         id: show-vars
@@ -55,12 +55,12 @@ jobs:
   release:
     needs: discover-new-tags
     uses: ./.github/workflows/demo-releaser.yaml
-    if: needs.discover-new-tags.outputs.is_newer == 'dog'
+    if: needs.discover-new-tags.outputs.is_newer == 'true'
     with:
       tag: ${{vars.LATEST}}
 
   mark-version-complete:
-    needs: release
+    needs: [discover-new-tags, release]
     runs-on: ubuntu-latest
     steps:
       - name: Updating current tag after successful release
