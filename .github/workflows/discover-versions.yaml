@@ -49,10 +49,6 @@ jobs:
             echo is_newer=true >> $GITHUB_OUTPUT
             echo latest=${{env.LATEST}} >> $GITHUB_OUTPUT
           fi
-      - name: Show vars
-        id: show-vars
-        run: |
-          echo $GITHUB_ENV
 
   release:
     needs: discover-new-tags
