@@ -1,5 +1,6 @@
 name: Demo releaser
 on:
+  workflow_dispatch: {}
   workflow_call:
     inputs:
       tag:
