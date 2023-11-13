@@ -58,7 +58,7 @@ jobs:
       tag: ${{needs.discover-new-tags.outputs.latest}}
 
   mark-version-complete:
-    needs: [discover-new-tags, release]
+    needs: [discover-new-tags, call-release]
     runs-on: ubuntu-latest
     steps:
       - name: Updating current tag after successful release
