@@ -50,7 +50,7 @@ jobs:
             echo latest=${{env.LATEST}} >> $GITHUB_OUTPUT
           fi
 
-  release:
+  call-release:
     needs: discover-new-tags
     uses: ./.github/workflows/demo-releaser.yaml
     if: needs.discover-new-tags.outputs.is_newer == 'true'
