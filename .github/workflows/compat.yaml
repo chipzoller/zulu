@@ -1,12 +1,18 @@
 # other commands:
 # echo "${{ steps.create-cluster.outputs.cluster-kubeconfig }}" > kubeconfig.yaml
-# kubectl --kubeconfig kubeconfig.yaml get pods -A
-name: test-cluster
+name: ephemeral-clusters
 on:
   workflow_dispatch: {}
 jobs:
-  cluster:
+  build-cluster:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        cluster:
+        - distribution: eks
+          version: v1.26
+        - distribution: openshift
+          version: 4.13.0-okd
     steps:
       - uses: actions/checkout@v4
 
@@ -16,9 +22,9 @@ jobs:
         uses: replicatedhq/compatibility-actions/create-cluster@v1
         with:
           api-token: ${{ secrets.REPLICATED_API_TOKEN }}
-          kubernetes-distribution: openshift # eks
-          kubernetes-version: 4.13.0-okd # for eks "1.25"
-          cluster-name: foo
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          cluster-name: ${{ matrix.cluster.distribution }}-${{ matrix.cluster.version }}
           timeout-minutes: 5
           ttl: 10m
           export-kubeconfig: true
