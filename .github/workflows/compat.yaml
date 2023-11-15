@@ -4,7 +4,7 @@ name: ephemeral-clusters
 on:
   workflow_dispatch: {}
 jobs:
-  build-cluster:
+  build-and-test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
