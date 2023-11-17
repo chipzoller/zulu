@@ -1,17 +1,16 @@
 # Requires a secret called MY_TOKEN to be set in the repo with a GitHub token that has gist permissions for read and write.
-# Only one of IMAGE_REPO or HELM_REPO should be specified.
 name: discover-versions
 on:
   workflow_dispatch: {}
   schedule:
     - cron: '0 0 * * *'
 env:
-  # The image repository to use for discovering tags.
-  IMAGE_REPO: gcr.io/kubecost1/cost-model
-  # The regex pattern to use when disovering image tags.
+  # The image repository to use for discovering image tags. This is mutually exclusive with HELM_REPO.
+  # IMAGE_REPO: gcr.io/kubecost1/cost-model
+  # The regex pattern to use when disovering image tags. This one matches the pattern "prod-1.x.x", not any pre-releases or other tags.
   IMAGE_REGEX: '^prod-1.[0-9]+.[0-9]+$'
-  # The Helm repository to use for discovering new releases.
-  # HELM_REPO: https://kubecost.github.io/cost-analyzer/
+  # The Helm repository to use for discovering new releases. This is mutually exclusive with IMAGE_REPO.
+  HELM_REPO: https://kubecost.github.io/cost-analyzer/
   # The Helm chart name to use for discovering new releases.
   # HELM_CHART: cost-analyzer
   # The gist ID to use for storing the last discovered version.
@@ -27,21 +26,25 @@ jobs:
     steps:
       - name: Install oras CLI
         uses: oras-project/setup-oras@v1
-      # Get the latest tag from the specified IMAGE_REPO var but only return the latest version
-      # which matches the pattern "prod-1.x.x", not any pre-releases or other tags.
+      # Get the latest image tag or Helm chart version, whichever is specified.
+      # Only one of either IMAGE_REPO or HELM_REPO can be defined.
       - name: Discover latest tag
         run: |
           if [[ -n $IMAGE_REPO && -n $HELM_REPO ]]; then
-            echo "Both IMAGE_REPO and HELM_REPO are defined. This script expects one or the other. Failing."
+            echo "Both IMAGE_REPO and HELM_REPO are defined. This action expects one or the other. Failing."
             exit 1
           else
-            echo "Conflicting variable check passed. Continuing."
+            echo "No conflicting variables found. Continuing."
           fi
           if [[ -n $IMAGE_REPO ]]; then
             echo "IMAGE_REPO is defined. Will use this to discover the latest tag."
             LATEST=$(oras repo tags $IMAGE_REPO | egrep "$IMAGE_REGEX" | sort -t "." -k1,1n -k2,2n -k3,3n | tail -n1)
           else
             echo "HELM_REPO is defined. Will use this to discover the latest release."
+            if [[ -z $HELM_CHART ]]; then
+              echo "HELM_CHART is not defined. This is required when using HELM_REPO. Failing."
+              exit 1
+            fi
             helm repo add temp $HELM_REPO > /dev/null 2>&1
             LATEST=$(helm search repo $HELM_CHART -l -o json | jq -r .[].version | head -n1)
           fi
