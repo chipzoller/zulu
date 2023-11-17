@@ -39,7 +39,7 @@ jobs:
             LATEST=$(oras repo tags $IMAGE_REPO | egrep '^prod-1.[0-9]+.[0-9]+$' | sort -t "." -k1,1n -k2,2n -k3,3n | tail -n1)
           else
             echo "HELM_REPO is defined. Will use this to discover the latest release."
-            helm repo add temp $HELM_REPO
+            helm repo add temp $HELM_REPO > /dev/null 2>&1
             LATEST=$(helm search repo $HELM_CHART -l -o json | jq -r .[].version | head -n1)
           fi
           if [[ -z "$LATEST" ]]; then
