@@ -28,13 +28,13 @@ jobs:
       # Can also be used for Helm charts: helm search repo cost-analyzer -l -o json | jq -r .[].version | head -n1
       - name: Discover latest tag
         run: |
-          if [ -n $IMAGE_REPO && -n $HELM_REPO ]; then
+          if [[ -n $IMAGE_REPO && -n $HELM_REPO ]]; then
             echo "Both IMAGE_REPO and HELM_REPO are defined. This script expects one or the other. Failing."
             exit 1
           else
             echo "Conflicting variable check passed. Continuing."
           fi
-          if [ -n $IMAGE_REPO ]; then
+          if [[ -n $IMAGE_REPO ]]; then
             echo "IMAGE_REPO is defined. Will use this to discover the latest tag."
             LATEST=$(oras repo tags $IMAGE_REPO | egrep '^prod-1.[0-9]+.[0-9]+$' | sort -t "." -k1,1n -k2,2n -k3,3n | tail -n1)
           else
