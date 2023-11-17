@@ -5,7 +5,7 @@ on:
   workflow_dispatch: {}
 env:
   # The image repository to use for discovering tags.
-  # IMAGE_REPO: gcr.io/kubecost1/cost-model
+  IMAGE_REPO: gcr.io/kubecost1/cost-model
   # The Helm repository to use for discovering new releases.
   HELM_REPO: https://kubecost.github.io/cost-analyzer/
   # The Helm chart name to use for discovering new releases.
@@ -42,7 +42,7 @@ jobs:
             helm repo add temp $HELM_REPO
             LATEST=$(helm search repo $HELM_CHART -l -o json | jq -r .[].version | head -n1)
           fi
-          if [ -z "$LATEST" ]; then
+          if [[ -z "$LATEST" ]]; then
             echo "No new tag or release found. Something is wrong. Failing."
             exit 1
           else
