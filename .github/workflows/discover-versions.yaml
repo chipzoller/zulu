@@ -30,7 +30,7 @@ jobs:
       # Only one of either IMAGE_REPO or HELM_REPO can be defined.
       - name: Discover latest tag
         run: |
-          if [[ -z $IMAGE_REPO && -n $HELM_REPO ]]; then
+          if [[ -z $IMAGE_REPO && -z $HELM_REPO ]]; then
             echo "Neither IMAGE_REPO nor HELM_REPO is defined. This action expects at least one. Failing."
             exit 1
           else
