@@ -6,7 +6,7 @@ on:
     - cron: '0 0 * * *'
 env:
   # The image repository to use for discovering image tags. This is mutually exclusive with HELM_REPO.
-  IMAGE_REPO: gcr.io/kubecost1/cost-model
+  # IMAGE_REPO: gcr.io/kubecost1/cost-model
   # The regex pattern to use when disovering image tags. This one matches the pattern "prod-1.x.x", not any pre-releases or other tags.
   IMAGE_REGEX: '^prod-1.[0-9]+.[0-9]+$'
   # The Helm repository to use for discovering new releases. This is mutually exclusive with IMAGE_REPO.
@@ -30,6 +30,12 @@ jobs:
       # Only one of either IMAGE_REPO or HELM_REPO can be defined.
       - name: Discover latest tag
         run: |
+          if [[ -z $IMAGE_REPO && -n $HELM_REPO ]]; then
+            echo "Neither IMAGE_REPO nor HELM_REPO is defined. This action expects at least one. Failing."
+            exit 1
+          else
+            echo "IMAGE_REPO or HELM_REPO is available. Continuing."
+          fi
           if [[ -n $IMAGE_REPO && -n $HELM_REPO ]]; then
             echo "Both IMAGE_REPO and HELM_REPO are defined. This action expects one or the other. Failing."
             exit 1
