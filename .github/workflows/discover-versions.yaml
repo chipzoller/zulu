@@ -40,6 +40,7 @@ jobs:
           else
             echo "HELM_REPO is defined. Will use this to discover the latest release."
             LATEST=$(helm repo add temp $HELM_REPO && helm search repo $HELM_CHART -l -o json | jq -r .[].version | head -n1)
+          fi
           if [ -z "$LATEST" ]; then
             echo "No new tag or release found. Something is wrong. Failing."
             exit 1
