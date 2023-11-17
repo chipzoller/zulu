@@ -7,9 +7,9 @@ env:
   # The image repository to use for discovering tags.
   IMAGE_REPO: gcr.io/kubecost1/cost-model
   # The Helm repository to use for discovering new releases.
-  HELM_REPO: https://kubecost.github.io/cost-analyzer/
+  # HELM_REPO: https://kubecost.github.io/cost-analyzer/
   # The Helm chart name to use for discovering new releases.
-  HELM_CHART: cost-analyzer
+  # HELM_CHART: cost-analyzer
   # The gist ID to use for storing the last discovered version.
   GIST: 5bb3e010e5817903768c381c017cfcb4
   # The gist file name to use for storing the last discovered version.
@@ -25,7 +25,6 @@ jobs:
         uses: oras-project/setup-oras@v1
       # Get the latest tag from the specified IMAGE_REPO var but only return the latest version
       # which matches the pattern "prod-1.x.x", not any pre-releases or other tags.
-      # Can also be used for Helm charts: helm search repo cost-analyzer -l -o json | jq -r .[].version | head -n1
       - name: Discover latest tag
         run: |
           if [[ -n $IMAGE_REPO && -n $HELM_REPO ]]; then
