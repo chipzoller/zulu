@@ -20,6 +20,10 @@ jobs:
       is_newer: ${{ steps.compare-tags.outputs.is_newer }}   
       latest: ${{ steps.compare-tags.outputs.latest }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Install oras CLI
         uses: oras-project/setup-oras@v1
       # Get the latest image tag or Helm chart version, whichever is specified.
