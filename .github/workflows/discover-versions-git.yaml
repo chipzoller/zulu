@@ -96,5 +96,6 @@ jobs:
       - name: Update journal
         id: update-journal
         run: |
+          echo "Updating journal with latest tag: ${{env.LATEST}}"
           echo ${{env.LATEST}} > .github/journal/cost-analyzer
       - uses: stefanzweifel/git-auto-commit-action@v5
