@@ -68,7 +68,7 @@ jobs:
       - name: Get last version from journal
         id: read-journal
         run: |
-          LAST=$(cat ../journal/cost-analyzer)
+          LAST=$(cat .github/journal/cost-analyzer)
           echo LAST=$LAST >> $GITHUB_ENV
       - name: Compare last to latest
         id: compare-tags
