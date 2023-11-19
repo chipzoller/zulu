@@ -69,6 +69,7 @@ jobs:
         id: read-journal
         run: |
           LAST=$(cat .github/journal/cost-analyzer)
+          echo "Last version recorded in the journal is: $LAST"
           echo LAST=$LAST >> $GITHUB_ENV
       - name: Compare last to latest
         id: compare-tags
@@ -93,6 +94,10 @@ jobs:
     needs: [discover-new-tags, call-release]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Update journal
         id: update-journal
         run: |
