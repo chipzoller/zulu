@@ -1,0 +1,106 @@
+# Requires a secret called MY_TOKEN to be set in the repo with a GitHub token that has gist permissions for read and write.
+name: discover-versions-git
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 0 * * *'
+env:
+  # The image repository to use for discovering image tags. This is mutually exclusive with HELM_REPO.
+  IMAGE_REPO: gcr.io/kubecost1/cost-model
+  # The regex pattern to use when disovering image tags. Required if IMAGE_REPO is set. This one matches the pattern "prod-1.x.x", not any pre-releases or other tags.
+  IMAGE_REGEX: '^prod-1.[0-9]+.[0-9]+$'
+  # The Helm repository to use for discovering new releases. This is mutually exclusive with IMAGE_REPO.
+  # HELM_REPO: https://kubecost.github.io/cost-analyzer/
+  # The Helm chart name to use for discovering new releases. Required if HELM_REPO is set.
+  # HELM_CHART: cost-analyzer
+  # The gist ID to use for storing the last discovered version.
+  GIST: 5bb3e010e5817903768c381c017cfcb4
+  # The gist file name to use for storing the last discovered version.
+  GIST_FILE: last.txt
+jobs:
+  discover-new-tags:
+    runs-on: ubuntu-latest
+    outputs:
+      is_newer: ${{ steps.compare-tags.outputs.is_newer }}   
+      latest: ${{ steps.compare-tags.outputs.latest }}
+    steps:
+      - name: Install oras CLI
+        uses: oras-project/setup-oras@v1
+      # Get the latest image tag or Helm chart version, whichever is specified.
+      # Only one of either IMAGE_REPO or HELM_REPO may be defined.
+      - name: Discover latest tag
+        run: |
+          if [[ -z $IMAGE_REPO && -z $HELM_REPO ]]; then
+            echo "Neither IMAGE_REPO nor HELM_REPO is defined. This action expects at least one. Failing."
+            exit 1
+          else
+            echo "IMAGE_REPO or HELM_REPO is available. Continuing."
+          fi
+          if [[ -n $IMAGE_REPO && -n $HELM_REPO ]]; then
+            echo "Both IMAGE_REPO and HELM_REPO are defined. This action expects one or the other. Failing."
+            exit 1
+          else
+            echo "No conflicting variables found. Continuing."
+          fi
+          if [[ -n $IMAGE_REPO ]]; then
+            echo "IMAGE_REPO is defined. Will use this to discover the latest tag."
+            if [[ -z $IMAGE_REGEX ]]; then
+              echo "IMAGE_REGEX is not defined. This is required when using IMAGE_REPO. Failing."
+              exit 1
+            fi
+            LATEST=$(oras repo tags $IMAGE_REPO | egrep "$IMAGE_REGEX" | sort -t "." -k1,1n -k2,2n -k3,3n | tail -n1)
+          else
+            echo "HELM_REPO is defined. Will use this to discover the latest release."
+            if [[ -z $HELM_CHART ]]; then
+              echo "HELM_CHART is not defined. This is required when using HELM_REPO. Failing."
+              exit 1
+            fi
+            helm repo add temp $HELM_REPO > /dev/null 2>&1
+            LATEST=$(helm search repo $HELM_CHART -l -o json | jq -r .[].version | head -n1)
+          fi
+          if [[ -z "$LATEST" ]]; then
+            echo "No new tag or release found. Something is wrong. Failing."
+            exit 1
+          else
+            echo "Latest discovered tag or release is: $LATEST"
+            echo LATEST=$LATEST >> $GITHUB_ENV
+          fi
+      - name: Read current tag from gist
+        uses: sergeysova/gist-read-action@v1
+        id: read-gist
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
+        with:
+          gist_id: ${{env.GIST}}
+          file_name: ${{env.GIST_FILE}}
+      - name: Compare latest tag to current tag from gist
+        id: compare-tags
+        run: |
+          if [ "${{env.LATEST}}" = "${{ steps.read-gist.outputs.content }}" ]; then
+            echo "No newer tag found. Exiting."
+            exit 0
+          else
+            echo "A newer tag has been discovered. The current tag is ${{ steps.read-gist.outputs.content }} while the new tag is ${{env.LATEST}}. Will proceed with a release."
+            echo is_newer=true >> $GITHUB_OUTPUT
+            echo latest=${{env.LATEST}} >> $GITHUB_OUTPUT
+          fi
+
+  call-release:
+    needs: discover-new-tags
+    uses: ./.github/workflows/demo-releaser.yaml
+    if: needs.discover-new-tags.outputs.is_newer == 'true'
+    with:
+      tag: ${{needs.discover-new-tags.outputs.latest}}
+
+  mark-version-complete:
+    needs: [discover-new-tags, call-release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Updating current tag after successful release
+        uses: sergeysova/gist-write-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
+        with:
+          gist_id: ${{env.GIST}}
+          file_name: ${{env.GIST_FILE}}
+          content: ${{needs.discover-new-tags.outputs.latest}}
