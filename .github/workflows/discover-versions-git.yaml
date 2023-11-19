@@ -93,4 +93,8 @@ jobs:
     needs: [discover-new-tags, call-release]
     runs-on: ubuntu-latest
     steps:
+      - name: Update journal
+        id: update-journal
+        run: |
+          echo ${{env.LATEST}} > .github/journal/cost-analyzer
       - uses: stefanzweifel/git-auto-commit-action@v5
