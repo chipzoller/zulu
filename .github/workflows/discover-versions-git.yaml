@@ -1,4 +1,3 @@
-# Requires a secret called MY_TOKEN to be set in the repo with a GitHub token that has gist permissions for read and write.
 name: discover-versions-git
 on:
   workflow_dispatch: {}
@@ -6,13 +5,13 @@ on:
     - cron: '0 0 * * *'
 env:
   # The image repository to use for discovering image tags. This is mutually exclusive with HELM_REPO.
-  IMAGE_REPO: gcr.io/kubecost1/cost-model
+  # IMAGE_REPO: gcr.io/kubecost1/cost-model
   # The regex pattern to use when disovering image tags. Required if IMAGE_REPO is set. This one matches the pattern "prod-1.x.x", not any pre-releases or other tags.
-  IMAGE_REGEX: '^prod-1.[0-9]+.[0-9]+$'
+  # IMAGE_REGEX: '^prod-1.[0-9]+.[0-9]+$'
   # The Helm repository to use for discovering new releases. This is mutually exclusive with IMAGE_REPO.
-  # HELM_REPO: https://kubecost.github.io/cost-analyzer/
+  HELM_REPO: https://kubecost.github.io/cost-analyzer/
   # The Helm chart name to use for discovering new releases. Required if HELM_REPO is set.
-  # HELM_CHART: cost-analyzer
+  HELM_CHART: cost-analyzer
 jobs:
   discover-new-tags:
     runs-on: ubuntu-latest
