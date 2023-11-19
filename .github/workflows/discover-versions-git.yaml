@@ -13,10 +13,6 @@ env:
   # HELM_REPO: https://kubecost.github.io/cost-analyzer/
   # The Helm chart name to use for discovering new releases. Required if HELM_REPO is set.
   # HELM_CHART: cost-analyzer
-  # The gist ID to use for storing the last discovered version.
-  GIST: 5bb3e010e5817903768c381c017cfcb4
-  # The gist file name to use for storing the last discovered version.
-  GIST_FILE: last.txt
 jobs:
   discover-new-tags:
     runs-on: ubuntu-latest
@@ -65,22 +61,19 @@ jobs:
             echo "Latest discovered tag or release is: $LATEST"
             echo LATEST=$LATEST >> $GITHUB_ENV
           fi
-      - name: Read current tag from gist
-        uses: sergeysova/gist-read-action@v1
-        id: read-gist
-        env:
-          GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
-        with:
-          gist_id: ${{env.GIST}}
-          file_name: ${{env.GIST_FILE}}
-      - name: Compare latest tag to current tag from gist
+      - name: Get last version from journal
+        id: read-journal
+        run: |
+          LAST=$(cat .github/journal/cost-analyzer)
+          echo LAST=$LAST >> $GITHUB_ENV
+      - name: Compare last to latest
         id: compare-tags
         run: |
-          if [ "${{env.LATEST}}" = "${{ steps.read-gist.outputs.content }}" ]; then
+          if [ "${{env.LATEST}}" = "${{ env.LAST }}" ]; then
             echo "No newer tag found. Exiting."
             exit 0
           else
-            echo "A newer tag has been discovered. The current tag is ${{ steps.read-gist.outputs.content }} while the new tag is ${{env.LATEST}}. Will proceed with a release."
+            echo "A newer tag has been discovered. The current tag is ${{ env.LAST }} while the new tag is ${{env.LATEST}}. Will proceed with a release."
             echo is_newer=true >> $GITHUB_OUTPUT
             echo latest=${{env.LATEST}} >> $GITHUB_OUTPUT
           fi
@@ -96,11 +89,4 @@ jobs:
     needs: [discover-new-tags, call-release]
     runs-on: ubuntu-latest
     steps:
-      - name: Updating current tag after successful release
-        uses: sergeysova/gist-write-action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
-        with:
-          gist_id: ${{env.GIST}}
-          file_name: ${{env.GIST_FILE}}
-          content: ${{needs.discover-new-tags.outputs.latest}}
+      - uses: stefanzweifel/git-auto-commit-action@v5
