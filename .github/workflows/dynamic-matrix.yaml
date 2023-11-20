@@ -34,12 +34,13 @@ jobs:
   scan:
     needs: setup        
     runs-on: ubuntu-latest
+    # continue-on-error: true
     strategy:
       matrix: ${{ fromJson(needs.setup.outputs.imagematrix) }}
     steps:
       - name: Run Trivy vulnerability scanner
+        if: always()
         uses: aquasecurity/trivy-action@2b6a709cf9c4025c5438138008beaddbb02086f0 # v0.14.0
-        continue-on-error: true
         with:
           image-ref: ${{matrix.target}}
           format: table
