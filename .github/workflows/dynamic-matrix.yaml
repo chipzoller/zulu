@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       imagematrix: ${{ steps.allimages.outputs.images }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,7 +21,9 @@ jobs:
         id: allimages
         run: |
           TARGETS=$(helm template . | yq e -o json - | jq -r '.. | .image? | select(.)' | jq -R -s -c 'split("\n")[:-1]')
+          echo "targets are $TARGETS"
           echo "images=$(jq -cn --argjson environments "$TARGETS" '{target: $environments}')" >> $GITHUB_OUTPUT
+          echo "images are $images"
 
   run-matrix:
     needs: setup        
