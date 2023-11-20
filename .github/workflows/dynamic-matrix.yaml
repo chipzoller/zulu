@@ -26,7 +26,8 @@ jobs:
             --set networkCosts.enabled=true | \
             yq e -o json - | \
             jq -r '.. | .image? | select(.)' | \
-            jq -R -s -c 'split("\n")[:-1]')
+            jq -R -s -c 'split("\n")[:-1]' | \
+            jq -c 'unique')
           echo "Discovered image targets are: $TARGETS"
           echo "images=$(jq -cn --argjson environments "$TARGETS" '{target: $environments}')" >> $GITHUB_OUTPUT
 
