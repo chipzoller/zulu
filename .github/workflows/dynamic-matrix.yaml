@@ -16,6 +16,10 @@ jobs:
           repository: kubecost/cost-analyzer-helm-chart
           ref: develop
 
+      - name: Try yq
+        id: tryyq
+        run: yq --version
+
       - name: Extract all images
         id: allimages
         run: |
