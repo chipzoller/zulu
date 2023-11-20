@@ -20,7 +20,7 @@ jobs:
       - name: Extract all images
         id: allimages
         run: |
-          echo "TARGETS=$(helm template . | yq e -j - | jq -r '.. | .image? | select(.)' | jq -R -s -c 'split("\n")[:-1]')"
+          TARGETS=$(helm template . | yq e -o json - | jq -r '.. | .image? | select(.)' | jq -R -s -c 'split("\n")[:-1]')
           echo "images=$(jq -cn --argjson environments "$TARGETS" '{target: $environments}')" >> $GITHUB_OUTPUT
 
   run-matrix:
