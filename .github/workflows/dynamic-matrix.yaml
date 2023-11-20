@@ -15,12 +15,11 @@ jobs:
         with:
           repository: kubecost/cost-analyzer-helm-chart
           ref: develop
-          path: ./cost-analyzer-helm-chart
       
       - name: Extract all images
         id: allimages
         run: |
-          TARGETS=$(helm template . | yq e -o json - | jq -r '.. | .image? | select(.)' | jq -R -s -c 'split("\n")[:-1]')
+          TARGETS=$(helm template cost-analyzer/ | yq e -o json - | jq -r '.. | .image? | select(.)' | jq -R -s -c 'split("\n")[:-1]')
           echo "targets are $TARGETS"
           echo "images=$(jq -cn --argjson environments "$TARGETS" '{target: $environments}')" >> $GITHUB_OUTPUT
           echo "images are $images"
