@@ -1,0 +1,32 @@
+
+name: Dynamic Matrix Workflow
+on:
+  workflow_dispatch: {}
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      imagematrix: ${{ steps.allimages.outputs.images }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          repository: kubecost/cost-analyzer-helm-chart
+          ref: develop
+          path: ./cost-analyzer-helm-chart
+      
+      - name: Extract all images
+        id: allimages
+        run: |
+          echo "TARGETS=$(helm template . | yq e -j - | jq -r '.. | .image? | select(.)' | jq -R -s -c 'split("\n")[:-1]')"
+          echo "images=$(jq -cn --argjson environments "$TARGETS" '{target: $environments}')" >> $GITHUB_OUTPUT
+
+  run-matrix:
+    needs: setup        
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.setup.outputs.imagematrix) }}
+    steps:
+      - run: echo ${{matrix.target}}
