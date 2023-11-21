@@ -58,10 +58,13 @@ jobs:
         id: slack
         # if: always()
         uses: slackapi/slack-github-action@v1
-        # with:
-        #   payload: |
-        #     {
-        #       "job": "image vuln scan"
-        #     }
+        with:
+          payload: |
+            {
+              "workflow": "${{github.workflow}}",
+              "repo": "${{github.repository}}",
+              "runid": "${{github.run_id}}",
+              "message": "One or more images contain high or critical vulnerabilities."
+            }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
