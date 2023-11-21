@@ -49,14 +49,19 @@ jobs:
           vuln-type: os,library
           severity: CRITICAL,HIGH
 
+  notify:
+    needs: [scan, setup]
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
       - name: Slack notify
         id: slack
-        if: always()
+        # if: always()
         uses: slackapi/slack-github-action@v1
-        with:
-          payload: |
-            {
-              "job": "image vuln scan"
-            }
+        # with:
+        #   payload: |
+        #     {
+        #       "job": "image vuln scan"
+        #     }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
