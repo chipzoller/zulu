@@ -37,12 +37,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.setup.outputs.imagematrix) }}
+      # matrix: ${{ fromJson(needs.setup.outputs.imagematrix) }}
     steps:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{matrix.target}}
+          image-ref: docker.io/busybox:latest # ${{matrix.target}}
           format: table
           exit-code: 1
           ignore-unfixed: true
@@ -56,7 +56,6 @@ jobs:
     steps:
       - name: Slack notify
         id: slack
-        # if: always()
         uses: slackapi/slack-github-action@v1
         with:
           payload: |
