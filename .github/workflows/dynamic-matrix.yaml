@@ -1,7 +1,7 @@
+name: Image vulnerability scans
 
-name: Dynamic Matrix Workflow
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 jobs:
   setup:
@@ -16,10 +16,6 @@ jobs:
           repository: kubecost/cost-analyzer-helm-chart
           ref: develop
 
-      - name: Try yq
-        id: tryyq
-        run: yq --version
-
       - name: Extract all images
         id: allimages
         run: |
@@ -27,7 +23,8 @@ jobs:
             --set global.thanos.enabled=true \
             --set global.prometheus.enabled=true \
             --set global.grafana.enabled=true \
-            --set networkCosts.enabled=true | \
+            --set networkCosts.enabled=true \
+            --set clusterController.enabled=true | \
             yq e -o json - | \
             jq -r '.. | .image? | select(.)' | \
             jq -R -s -c 'split("\n")[:-1]' | \
@@ -51,3 +48,15 @@ jobs:
           ignore-unfixed: true
           vuln-type: os,library
           severity: CRITICAL,HIGH
+
+      - name: Slack notify
+        id: slack
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "job": "image vuln scan"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
