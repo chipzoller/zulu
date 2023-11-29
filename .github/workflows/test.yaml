@@ -50,5 +50,3 @@ jobs:
         npm version
         echo '#### manifest-tool version ####'
         manifest-tool --version
-        echo '#### crane version ####'
-        crane version
