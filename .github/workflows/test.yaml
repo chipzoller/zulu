@@ -13,8 +13,6 @@ jobs:
         curl -sL "https://github.com/google/go-containerregistry/releases/download/${VERSION}/go-containerregistry_${OS}_${ARCH}.tar.gz" > go-containerregistry.tar.gz
         tar -zxvf go-containerregistry.tar.gz -C /usr/local/bin/ crane
         crane version
-    - name: Show digest for gcr.io/kubecost1/cost-model-nightly:latest
-      run: crane digest gcr.io/kubecost1/cost-model-nightly:latest
     - name: gh
       run: gh version
     - name: helm
@@ -60,3 +58,19 @@ jobs:
         npm version
         echo '#### manifest-tool version ####'
         manifest-tool --version
+
+    - name: Get digest for gcr.io/kubecost1/cost-model-nightly:latest
+      run: |
+        set COST-MODEL-DIGEST=$(crane digest gcr.io/kubecost1/cost-model-nightly:latest)
+        echo "COST-MODEL-DIGEST=$COST-MODEL-DIGEST" >> $GITHUB_ENV
+        echo "Discovered digest for cost-model-nightly:latest: $COST-MODEL-DIGEST"
+
+    - name: Get digest for gcr.io/kubecost1/frontend-nightly:latest
+      run: |
+        set FRONTEND-DIGEST=$(crane digest gcr.io/kubecost1/frontend-nightly:latest)
+        echo "FRONTEND-DIGEST=$FRONTEND-DIGEST" >> $GITHUB_ENV
+        echo "Discovered digest for frontend-nightly:latest: $FRONTEND-DIGEST"
+
+    - name: Deploy nightly chart with helm
+      run: |
+        echo ${{ env.FRONTEND-DIGEST }} and ${{ env.COST-MODEL-DIGEST }}
