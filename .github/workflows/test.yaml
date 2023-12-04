@@ -61,16 +61,16 @@ jobs:
 
     - name: Get digest for gcr.io/kubecost1/cost-model-nightly:latest
       run: |
-        set COST-MODEL-DIGEST=$(crane digest gcr.io/kubecost1/cost-model-nightly:latest)
-        echo "COST-MODEL-DIGEST=$COST-MODEL-DIGEST" >> $GITHUB_ENV
-        echo "Discovered digest for cost-model-nightly:latest: $COST-MODEL-DIGEST"
+        set COSTMODELDIGEST=$(crane digest gcr.io/kubecost1/cost-model-nightly:latest)
+        echo "COSTMODELDIGEST=$COSTMODELDIGEST" >> $GITHUB_ENV
+        echo "Discovered digest for cost-model-nightly:latest: $COSTMODELDIGEST"
 
     - name: Get digest for gcr.io/kubecost1/frontend-nightly:latest
       run: |
-        set FRONTEND-DIGEST=$(crane digest gcr.io/kubecost1/frontend-nightly:latest)
-        echo "FRONTEND-DIGEST=$FRONTEND-DIGEST" >> $GITHUB_ENV
-        echo "Discovered digest for frontend-nightly:latest: $FRONTEND-DIGEST"
+        set FRONTENDDIGEST=$(crane digest gcr.io/kubecost1/frontend-nightly:latest)
+        echo "FRONTENDDIGEST=$FRONTENDDIGEST" >> $GITHUB_ENV
+        echo "Discovered digest for frontend-nightly:latest: $FRONTENDDIGEST"
 
     - name: Deploy nightly chart with helm
       run: |
-        echo ${{ env.FRONTEND-DIGEST }} and ${{ env.COST-MODEL-DIGEST }}
+        echo ${{ env.FRONTENDDIGEST }} and ${{ env.COSTMODELDIGEST }}
