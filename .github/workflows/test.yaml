@@ -1,21 +1,10 @@
 name: test native tools
 on:
   workflow_dispatch:
-    inputs:
-      release_version:
-        description: "Version. Please DO NOT include the 'v' prefix"
-        required: true
-      ui_version:
-        description: "Version of the published UI to use. Please DO NOT include the 'v' prefix"
-        required: true
 jobs:
   clis:
     runs-on: ubuntu-latest
     steps:
-    - name: Show input values
-      run: |
-        echo "release_version: ${{ inputs.release_version }}"
-        echo "ui_version: ${{ inputs.ui_version }}"
     - name: Install crane
       run: |
         VERSION=$(curl -s "https://api.github.com/repos/google/go-containerregistry/releases/latest" | jq -r '.tag_name')
