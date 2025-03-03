@@ -49,14 +49,14 @@ jobs:
       # IMAGE will be in format <registry>/<org>/<repo>@<digest> ex ghcr.io/johndoe/redis@sha256:1b85db3f261af51914867eeda20a25bedf72fa406619bcdd60f0658f27b2722d
       run: |
         tag=$(echo ${{ github.ref }} | cut -c11-)
-        IMAGE=$(ko build ./ --bare -t latest -t ${{ github.sha }} -t ${tag} --sbom=cyclonedx --sbom-dir=./)
+        IMAGE=$(ko build ./ --bare -t latest -t ${{ github.sha }} -t ${tag} --sbom=spdx --sbom-dir=./)
         echo "The image generated is: $IMAGE"
         echo "## Image summary" >> $GITHUB_STEP_SUMMARY
         echo "Built image: $IMAGE" >> $GITHUB_STEP_SUMMARY
         echo "IMAGE=$IMAGE" >> $GITHUB_ENV
         echo "image=$IMAGE" >> $GITHUB_OUTPUT
         echo "Renaming output SBOM file to sbom.json."
-        for file in *.cyclonedx.json; do
+        for file in *.spdx.json; do
           mv -- "$file" "sbom.json"
           break # Only rename the first file
         done
