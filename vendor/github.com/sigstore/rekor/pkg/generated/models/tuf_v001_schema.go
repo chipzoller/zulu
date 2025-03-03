@@ -32,7 +32,7 @@ import (
 
 // TUFV001Schema TUF v0.0.1 Schema
 //
-// Schema for TUF metadata entries
+// # Schema for TUF metadata entries
 //
 // swagger:model tufV001Schema
 type TUFV001Schema struct {
@@ -195,11 +195,30 @@ func (m *TUFV001Schema) UnmarshalBinary(b []byte) error {
 type TUFV001SchemaMetadata struct {
 
 	// Specifies the metadata inline within the document
-	Content interface{} `json:"content,omitempty"`
+	// Required: true
+	Content interface{} `json:"content"`
 }
 
 // Validate validates this TUF v001 schema metadata
 func (m *TUFV001SchemaMetadata) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateContent(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *TUFV001SchemaMetadata) validateContent(formats strfmt.Registry) error {
+
+	if m.Content == nil {
+		return errors.Required("metadata"+"."+"content", "body", nil)
+	}
+
 	return nil
 }
 

@@ -12,6 +12,7 @@ package errors
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/letsencrypt/boulder/identifier"
 )
@@ -56,6 +57,10 @@ type BoulderError struct {
 	Type      ErrorType
 	Detail    string
 	SubErrors []SubBoulderError
+
+	// RetryAfter the duration a client should wait before retrying the request
+	// which resulted in this error.
+	RetryAfter time.Duration
 }
 
 // SubBoulderError represents sub-errors specific to an identifier that are
@@ -77,9 +82,10 @@ func (be *BoulderError) Unwrap() error {
 // provided subErrs to the existing BoulderError.
 func (be *BoulderError) WithSubErrors(subErrs []SubBoulderError) *BoulderError {
 	return &BoulderError{
-		Type:      be.Type,
-		Detail:    be.Detail,
-		SubErrors: append(be.SubErrors, subErrs...),
+		Type:       be.Type,
+		Detail:     be.Detail,
+		SubErrors:  append(be.SubErrors, subErrs...),
+		RetryAfter: be.RetryAfter,
 	}
 }
 
@@ -107,10 +113,35 @@ func NotFoundError(msg string, args ...interface{}) error {
 	return New(NotFound, msg, args...)
 }
 
-func RateLimitError(msg string, args ...interface{}) error {
+func RateLimitError(retryAfter time.Duration, msg string, args ...interface{}) error {
 	return &BoulderError{
-		Type:   RateLimit,
-		Detail: fmt.Sprintf(msg+": see https://letsencrypt.org/docs/rate-limits/", args...),
+		Type:       RateLimit,
+		Detail:     fmt.Sprintf(msg+": see https://letsencrypt.org/docs/rate-limits/", args...),
+		RetryAfter: retryAfter,
+	}
+}
+
+func DuplicateCertificateError(retryAfter time.Duration, msg string, args ...interface{}) error {
+	return &BoulderError{
+		Type:       RateLimit,
+		Detail:     fmt.Sprintf(msg+": see https://letsencrypt.org/docs/duplicate-certificate-limit/", args...),
+		RetryAfter: retryAfter,
+	}
+}
+
+func FailedValidationError(retryAfter time.Duration, msg string, args ...interface{}) error {
+	return &BoulderError{
+		Type:       RateLimit,
+		Detail:     fmt.Sprintf(msg+": see https://letsencrypt.org/docs/failed-validation-limit/", args...),
+		RetryAfter: retryAfter,
+	}
+}
+
+func RegistrationsPerIPError(retryAfter time.Duration, msg string, args ...interface{}) error {
+	return &BoulderError{
+		Type:       RateLimit,
+		Detail:     fmt.Sprintf(msg+": see https://letsencrypt.org/docs/too-many-registrations-for-this-ip/", args...),
+		RetryAfter: retryAfter,
 	}
 }
 
