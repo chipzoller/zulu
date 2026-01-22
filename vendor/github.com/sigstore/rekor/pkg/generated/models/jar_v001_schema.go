@@ -24,6 +24,7 @@ package models
 import (
 	"context"
 	"encoding/json"
+	stderrors "errors"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -33,7 +34,7 @@ import (
 
 // JarV001Schema JAR v0.0.1 Schema
 //
-// Schema for JAR entries
+// # Schema for JAR entries
 //
 // swagger:model jarV001Schema
 type JarV001Schema struct {
@@ -72,11 +73,15 @@ func (m *JarV001Schema) validateArchive(formats strfmt.Registry) error {
 
 	if m.Archive != nil {
 		if err := m.Archive.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("archive")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("archive")
 			}
+
 			return err
 		}
 	}
@@ -91,11 +96,15 @@ func (m *JarV001Schema) validateSignature(formats strfmt.Registry) error {
 
 	if m.Signature != nil {
 		if err := m.Signature.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("signature")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("signature")
 			}
+
 			return err
 		}
 	}
@@ -124,12 +133,17 @@ func (m *JarV001Schema) ContextValidate(ctx context.Context, formats strfmt.Regi
 func (m *JarV001Schema) contextValidateArchive(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Archive != nil {
+
 		if err := m.Archive.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("archive")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("archive")
 			}
+
 			return err
 		}
 	}
@@ -140,12 +154,21 @@ func (m *JarV001Schema) contextValidateArchive(ctx context.Context, formats strf
 func (m *JarV001Schema) contextValidateSignature(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Signature != nil {
+
+		if swag.IsZero(m.Signature) { // not required
+			return nil
+		}
+
 		if err := m.Signature.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("signature")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("signature")
 			}
+
 			return err
 		}
 	}
@@ -205,11 +228,15 @@ func (m *JarV001SchemaArchive) validateHash(formats strfmt.Registry) error {
 
 	if m.Hash != nil {
 		if err := m.Hash.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("archive" + "." + "hash")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("archive" + "." + "hash")
 			}
+
 			return err
 		}
 	}
@@ -234,12 +261,21 @@ func (m *JarV001SchemaArchive) ContextValidate(ctx context.Context, formats strf
 func (m *JarV001SchemaArchive) contextValidateHash(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Hash != nil {
+
+		if swag.IsZero(m.Hash) { // not required
+			return nil
+		}
+
 		if err := m.Hash.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("archive" + "." + "hash")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("archive" + "." + "hash")
 			}
+
 			return err
 		}
 	}
@@ -272,7 +308,7 @@ type JarV001SchemaArchiveHash struct {
 
 	// The hashing function used to compute the hash value
 	// Required: true
-	// Enum: [sha256]
+	// Enum: ["sha256"]
 	Algorithm *string `json:"algorithm"`
 
 	// The hash value for the archive
@@ -298,7 +334,7 @@ func (m *JarV001SchemaArchiveHash) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-var jarV001SchemaArchiveHashTypeAlgorithmPropEnum []interface{}
+var jarV001SchemaArchiveHashTypeAlgorithmPropEnum []any
 
 func init() {
 	var res []string
@@ -406,7 +442,7 @@ func (m *JarV001SchemaSignature) Validate(formats strfmt.Registry) error {
 
 func (m *JarV001SchemaSignature) validateContent(formats strfmt.Registry) error {
 
-	if err := validate.Required("signature"+"."+"content", "body", strfmt.Base64(m.Content)); err != nil {
+	if err := validate.Required("signature"+"."+"content", "body", m.Content); err != nil {
 		return err
 	}
 
@@ -421,11 +457,15 @@ func (m *JarV001SchemaSignature) validatePublicKey(formats strfmt.Registry) erro
 
 	if m.PublicKey != nil {
 		if err := m.PublicKey.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("signature" + "." + "publicKey")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("signature" + "." + "publicKey")
 			}
+
 			return err
 		}
 	}
@@ -453,7 +493,7 @@ func (m *JarV001SchemaSignature) ContextValidate(ctx context.Context, formats st
 
 func (m *JarV001SchemaSignature) contextValidateContent(ctx context.Context, formats strfmt.Registry) error {
 
-	if err := validate.ReadOnly(ctx, "signature"+"."+"content", "body", strfmt.Base64(m.Content)); err != nil {
+	if err := validate.ReadOnly(ctx, "signature"+"."+"content", "body", m.Content); err != nil {
 		return err
 	}
 
@@ -463,12 +503,17 @@ func (m *JarV001SchemaSignature) contextValidateContent(ctx context.Context, for
 func (m *JarV001SchemaSignature) contextValidatePublicKey(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.PublicKey != nil {
+
 		if err := m.PublicKey.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("signature" + "." + "publicKey")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("signature" + "." + "publicKey")
 			}
+
 			return err
 		}
 	}

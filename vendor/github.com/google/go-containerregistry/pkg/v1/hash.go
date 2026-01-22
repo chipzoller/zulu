@@ -15,13 +15,13 @@
 package v1
 
 import (
-	"crypto/sha256"
+	"crypto"
+	"encoding"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"hash"
 	"io"
-	"strconv"
 	"strings"
 )
 
@@ -33,6 +33,11 @@ type Hash struct {
 	// Hex holds the hex portion of the content hash.
 	Hex string
 }
+
+var _ encoding.TextMarshaler = (*Hash)(nil)
+var _ encoding.TextUnmarshaler = (*Hash)(nil)
+var _ json.Marshaler = (*Hash)(nil)
+var _ json.Unmarshaler = (*Hash)(nil)
 
 // String reverses NewHash returning the string-form of the hash.
 func (h Hash) String() string {
@@ -49,14 +54,12 @@ func NewHash(s string) (Hash, error) {
 }
 
 // MarshalJSON implements json.Marshaler
-func (h Hash) MarshalJSON() ([]byte, error) {
-	return json.Marshal(h.String())
-}
+func (h Hash) MarshalJSON() ([]byte, error) { return json.Marshal(h.String()) }
 
 // UnmarshalJSON implements json.Unmarshaler
 func (h *Hash) UnmarshalJSON(data []byte) error {
-	s, err := strconv.Unquote(string(data))
-	if err != nil {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
 		return err
 	}
 	return h.parse(s)
@@ -64,21 +67,17 @@ func (h *Hash) UnmarshalJSON(data []byte) error {
 
 // MarshalText implements encoding.TextMarshaler. This is required to use
 // v1.Hash as a key in a map when marshalling JSON.
-func (h Hash) MarshalText() (text []byte, err error) {
-	return []byte(h.String()), nil
-}
+func (h Hash) MarshalText() ([]byte, error) { return []byte(h.String()), nil }
 
 // UnmarshalText implements encoding.TextUnmarshaler. This is required to use
 // v1.Hash as a key in a map when unmarshalling JSON.
-func (h *Hash) UnmarshalText(text []byte) error {
-	return h.parse(string(text))
-}
+func (h *Hash) UnmarshalText(text []byte) error { return h.parse(string(text)) }
 
 // Hasher returns a hash.Hash for the named algorithm (e.g. "sha256")
 func Hasher(name string) (hash.Hash, error) {
 	switch name {
 	case "sha256":
-		return sha256.New(), nil
+		return crypto.SHA256.New(), nil
 	default:
 		return nil, fmt.Errorf("unsupported hash: %q", name)
 	}
@@ -111,7 +110,7 @@ func (h *Hash) parse(unquoted string) error {
 
 // SHA256 computes the Hash of the provided io.Reader's content.
 func SHA256(r io.Reader) (Hash, int64, error) {
-	hasher := sha256.New()
+	hasher := crypto.SHA256.New()
 	n, err := io.Copy(hasher, r)
 	if err != nil {
 		return Hash{}, 0, err

@@ -17,7 +17,6 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -55,7 +54,7 @@ func NewCmdExport(options *[]crane.Option) *cobra.Command {
 
 			var img v1.Image
 			if src == "-" {
-				tmpfile, err := ioutil.TempFile("", "crane")
+				tmpfile, err := os.CreateTemp("", "crane")
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -71,9 +70,20 @@ func NewCmdExport(options *[]crane.Option) *cobra.Command {
 					return fmt.Errorf("reading tarball from stdin: %w", err)
 				}
 			} else {
-				img, err = crane.Pull(src, *options...)
+				desc, err := crane.Get(src, *options...)
 				if err != nil {
 					return fmt.Errorf("pulling %s: %w", src, err)
+				}
+				if desc.MediaType.IsSchema1() {
+					img, err = desc.Schema1()
+					if err != nil {
+						return fmt.Errorf("pulling schema 1 image %s: %w", src, err)
+					}
+				} else {
+					img, err = desc.Image()
+					if err != nil {
+						return fmt.Errorf("pulling Image %s: %w", src, err)
+					}
 				}
 			}
 

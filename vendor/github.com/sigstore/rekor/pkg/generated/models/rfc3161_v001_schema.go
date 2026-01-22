@@ -23,6 +23,7 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -32,7 +33,7 @@ import (
 
 // Rfc3161V001Schema Timestamp v0.0.1 Schema
 //
-// Schema for RFC3161 entries
+// # Schema for RFC3161 entries
 //
 // swagger:model rfc3161V001Schema
 type Rfc3161V001Schema struct {
@@ -64,11 +65,15 @@ func (m *Rfc3161V001Schema) validateTsr(formats strfmt.Registry) error {
 
 	if m.Tsr != nil {
 		if err := m.Tsr.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("tsr")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("tsr")
 			}
+
 			return err
 		}
 	}
@@ -93,12 +98,17 @@ func (m *Rfc3161V001Schema) ContextValidate(ctx context.Context, formats strfmt.
 func (m *Rfc3161V001Schema) contextValidateTsr(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Tsr != nil {
+
 		if err := m.Tsr.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("tsr")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("tsr")
 			}
+
 			return err
 		}
 	}

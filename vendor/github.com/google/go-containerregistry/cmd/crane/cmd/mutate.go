@@ -30,19 +30,22 @@ import (
 func NewCmdMutate(options *[]crane.Option) *cobra.Command {
 	var labels map[string]string
 	var annotations map[string]string
+	var envVars keyToValue
 	var entrypoint, cmd []string
-	var envVars map[string]string
 	var newLayers []string
 	var outFile string
 	var newRef string
 	var newRepo string
 	var user string
+	var workdir string
+	var ports []string
+	var newPlatform string
 
 	mutateCmd := &cobra.Command{
 		Use:   "mutate",
 		Short: "Modify image labels and annotations. The container must be pushed to a registry, and the manifest is updated there.",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(c *cobra.Command, args []string) error {
 			// Pull image and get config.
 			ref := args[0]
 
@@ -114,8 +117,34 @@ func NewCmdMutate(options *[]crane.Option) *cobra.Command {
 				cfg.Config.User = user
 			}
 
+			// Set workdir.
+			if len(workdir) > 0 {
+				cfg.Config.WorkingDir = workdir
+			}
+
+			// Set ports
+			if len(ports) > 0 {
+				portMap := make(map[string]struct{})
+				for _, port := range ports {
+					portMap[port] = struct{}{}
+				}
+				cfg.Config.ExposedPorts = portMap
+			}
+
+			// Set platform
+			if len(newPlatform) > 0 {
+				platform, err := parsePlatform(newPlatform)
+				if err != nil {
+					return err
+				}
+				cfg.OS = platform.OS
+				cfg.Architecture = platform.Architecture
+				cfg.Variant = platform.Variant
+				cfg.OSVersion = platform.OSVersion
+			}
+
 			// Mutate and write image.
-			img, err = mutate.Config(img, cfg.Config)
+			img, err = mutate.ConfigFile(img, cfg)
 			if err != nil {
 				return fmt.Errorf("mutating config: %w", err)
 			}
@@ -150,14 +179,14 @@ func NewCmdMutate(options *[]crane.Option) *cobra.Command {
 				if err := crane.Push(img, newRef, *options...); err != nil {
 					return fmt.Errorf("pushing %s: %w", newRef, err)
 				}
-				fmt.Println(r.Context().Digest(digest.String()))
+				fmt.Fprintln(c.OutOrStdout(), r.Context().Digest(digest.String()))
 			}
 			return nil
 		},
 	}
 	mutateCmd.Flags().StringToStringVarP(&annotations, "annotation", "a", nil, "New annotations to add")
 	mutateCmd.Flags().StringToStringVarP(&labels, "label", "l", nil, "New labels to add")
-	mutateCmd.Flags().StringToStringVarP(&envVars, "env", "e", nil, "New envvar to add")
+	mutateCmd.Flags().VarP(&envVars, "env", "e", "New envvar to add")
 	mutateCmd.Flags().StringSliceVar(&entrypoint, "entrypoint", nil, "New entrypoint to set")
 	mutateCmd.Flags().StringSliceVar(&cmd, "cmd", nil, "New cmd to set")
 	mutateCmd.Flags().StringVar(&newRepo, "repo", "", "Repository to push the mutated image to. If provided, push by digest to this repository.")
@@ -165,6 +194,10 @@ func NewCmdMutate(options *[]crane.Option) *cobra.Command {
 	mutateCmd.Flags().StringVarP(&outFile, "output", "o", "", "Path to new tarball of resulting image")
 	mutateCmd.Flags().StringSliceVar(&newLayers, "append", []string{}, "Path to tarball to append to image")
 	mutateCmd.Flags().StringVarP(&user, "user", "u", "", "New user to set")
+	mutateCmd.Flags().StringVarP(&workdir, "workdir", "w", "", "New working dir to set")
+	mutateCmd.Flags().StringSliceVar(&ports, "exposed-ports", nil, "New ports to expose")
+	// Using "set-platform" to avoid clobbering "platform" persistent flag.
+	mutateCmd.Flags().StringVar(&newPlatform, "set-platform", "", "New platform to set in the form os/arch[/variant][:osversion] (e.g. linux/amd64)")
 	return mutateCmd
 }
 
@@ -179,29 +212,91 @@ func validateKeyVals(kvPairs map[string]string) error {
 }
 
 // setEnvVars override envvars in a config
-func setEnvVars(cfg *v1.ConfigFile, envVars map[string]string) error {
+func setEnvVars(cfg *v1.ConfigFile, envVars keyToValue) error {
+	eMap := envVars.Map()
 	newEnv := make([]string, 0, len(cfg.Config.Env))
+	isWindows := cfg.OS == "windows"
+
+	// Keep the old values.
 	for _, old := range cfg.Config.Env {
-		split := strings.SplitN(old, "=", 2)
-		if len(split) != 2 {
+		oldKey, _, ok := strings.Cut(old, "=")
+		if !ok {
 			return fmt.Errorf("invalid key value pair in config: %s", old)
 		}
-		// keep order so override if specified again
-		oldKey := split[0]
-		if v, ok := envVars[oldKey]; ok {
-			newEnv = append(newEnv, fmt.Sprintf("%s=%s", oldKey, v))
-			delete(envVars, oldKey)
+
+		if v, ok := eMap[oldKey]; ok {
+			// Override in place to keep ordering of original env.
+			newEnv = append(newEnv, oldKey+"="+v)
+
+			// Remove this from eMap so we don't add it twice.
+			delete(eMap, oldKey)
 		} else {
 			newEnv = append(newEnv, old)
 		}
 	}
-	isWindows := cfg.OS == "windows"
-	for k, v := range envVars {
+
+	// Append the new values.
+	for _, e := range envVars.values {
+		k, v := e.key, e.value
+
+		if _, ok := eMap[k]; !ok {
+			// If we come across a value not in eMap, it means we replaced the
+			// old env in-place and deleted it from eMap, so we can skip adding.
+			continue
+		}
+
 		if isWindows {
 			k = strings.ToUpper(k)
 		}
+
 		newEnv = append(newEnv, fmt.Sprintf("%s=%s", k, v))
 	}
+
 	cfg.Config.Env = newEnv
 	return nil
+}
+
+type env struct {
+	key   string
+	value string
+}
+
+type keyToValue struct {
+	values  []env
+	changed bool
+	mapped  map[string]string
+}
+
+func (o *keyToValue) Set(val string) error {
+	before, after, ok := strings.Cut(val, "=")
+	if !ok {
+		return fmt.Errorf("%s must be formatted as key=value", val)
+	}
+
+	if !o.changed {
+		o.values = []env{}
+		o.mapped = map[string]string{}
+	}
+
+	o.values = append(o.values, env{before, after})
+	o.mapped[before] = after
+	o.changed = true
+
+	return nil
+}
+
+func (o *keyToValue) Type() string {
+	return "keyToValue"
+}
+
+func (o *keyToValue) String() string {
+	ss := make([]string, 0, len(o.values))
+	for _, e := range o.values {
+		ss = append(ss, e.key+"="+e.value)
+	}
+	return strings.Join(ss, ",")
+}
+
+func (o *keyToValue) Map() map[string]string {
+	return o.mapped
 }

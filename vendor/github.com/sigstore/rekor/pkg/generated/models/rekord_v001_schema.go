@@ -24,6 +24,7 @@ package models
 import (
 	"context"
 	"encoding/json"
+	stderrors "errors"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -33,7 +34,7 @@ import (
 
 // RekordV001Schema Rekor v0.0.1 Schema
 //
-// Schema for Rekord object
+// # Schema for Rekord object
 //
 // swagger:model rekordV001Schema
 type RekordV001Schema struct {
@@ -73,11 +74,15 @@ func (m *RekordV001Schema) validateData(formats strfmt.Registry) error {
 
 	if m.Data != nil {
 		if err := m.Data.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("data")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("data")
 			}
+
 			return err
 		}
 	}
@@ -93,11 +98,15 @@ func (m *RekordV001Schema) validateSignature(formats strfmt.Registry) error {
 
 	if m.Signature != nil {
 		if err := m.Signature.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("signature")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("signature")
 			}
+
 			return err
 		}
 	}
@@ -126,12 +135,17 @@ func (m *RekordV001Schema) ContextValidate(ctx context.Context, formats strfmt.R
 func (m *RekordV001Schema) contextValidateData(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Data != nil {
+
 		if err := m.Data.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("data")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("data")
 			}
+
 			return err
 		}
 	}
@@ -142,12 +156,17 @@ func (m *RekordV001Schema) contextValidateData(ctx context.Context, formats strf
 func (m *RekordV001Schema) contextValidateSignature(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Signature != nil {
+
 		if err := m.Signature.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("signature")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("signature")
 			}
+
 			return err
 		}
 	}
@@ -207,11 +226,15 @@ func (m *RekordV001SchemaData) validateHash(formats strfmt.Registry) error {
 
 	if m.Hash != nil {
 		if err := m.Hash.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("data" + "." + "hash")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("data" + "." + "hash")
 			}
+
 			return err
 		}
 	}
@@ -236,12 +259,21 @@ func (m *RekordV001SchemaData) ContextValidate(ctx context.Context, formats strf
 func (m *RekordV001SchemaData) contextValidateHash(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Hash != nil {
+
+		if swag.IsZero(m.Hash) { // not required
+			return nil
+		}
+
 		if err := m.Hash.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("data" + "." + "hash")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("data" + "." + "hash")
 			}
+
 			return err
 		}
 	}
@@ -274,7 +306,7 @@ type RekordV001SchemaDataHash struct {
 
 	// The hashing function used to compute the hash value
 	// Required: true
-	// Enum: [sha256]
+	// Enum: ["sha256"]
 	Algorithm *string `json:"algorithm"`
 
 	// The hash value for the content
@@ -300,7 +332,7 @@ func (m *RekordV001SchemaDataHash) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-var rekordV001SchemaDataHashTypeAlgorithmPropEnum []interface{}
+var rekordV001SchemaDataHashTypeAlgorithmPropEnum []any
 
 func init() {
 	var res []string
@@ -389,7 +421,7 @@ type RekordV001SchemaSignature struct {
 
 	// Specifies the format of the signature
 	// Required: true
-	// Enum: [pgp minisign x509 ssh]
+	// Enum: ["pgp","minisign","x509","ssh"]
 	Format *string `json:"format"`
 
 	// public key
@@ -428,7 +460,7 @@ func (m *RekordV001SchemaSignature) validateContent(formats strfmt.Registry) err
 	return nil
 }
 
-var rekordV001SchemaSignatureTypeFormatPropEnum []interface{}
+var rekordV001SchemaSignatureTypeFormatPropEnum []any
 
 func init() {
 	var res []string
@@ -485,11 +517,15 @@ func (m *RekordV001SchemaSignature) validatePublicKey(formats strfmt.Registry) e
 
 	if m.PublicKey != nil {
 		if err := m.PublicKey.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("signature" + "." + "publicKey")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("signature" + "." + "publicKey")
 			}
+
 			return err
 		}
 	}
@@ -514,12 +550,17 @@ func (m *RekordV001SchemaSignature) ContextValidate(ctx context.Context, formats
 func (m *RekordV001SchemaSignature) contextValidatePublicKey(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.PublicKey != nil {
+
 		if err := m.PublicKey.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("signature" + "." + "publicKey")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("signature" + "." + "publicKey")
 			}
+
 			return err
 		}
 	}

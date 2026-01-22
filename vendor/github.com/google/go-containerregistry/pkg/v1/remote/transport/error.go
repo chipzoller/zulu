@@ -17,31 +17,15 @@ package transport
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
-	"net/url"
 	"strings"
+
+	"github.com/google/go-containerregistry/internal/redact"
 )
 
-// The set of query string keys that we expect to send as part of the registry
-// protocol. Anything else is potentially dangerous to leak, as it's probably
-// from a redirect. These redirects often included tokens or signed URLs.
-var paramAllowlist = map[string]struct{}{
-	// Token exchange
-	"scope":   {},
-	"service": {},
-	// Cross-repo mounting
-	"mount": {},
-	"from":  {},
-	// Layer PUT
-	"digest": {},
-	// Listing tags and catalog
-	"n":    {},
-	"last": {},
-}
-
 // Error implements error to support the following error specification:
-// https://github.com/docker/distribution/blob/master/docs/spec/api.md#errors
+// https://github.com/distribution/distribution/blob/aac2f6c8b7c5a6c60190848bab5cbeed2b5ba0a9/docs/spec/api.md#errors
 type Error struct {
 	Errors []Diagnostic `json:"errors,omitempty"`
 	// The http status code returned.
@@ -50,6 +34,9 @@ type Error struct {
 	Request *http.Request
 	// The raw body if we couldn't understand it.
 	rawBody string
+
+	// Bit of a hack to make it easier to force a retry.
+	temporary bool
 }
 
 // Check that Error implements error
@@ -59,7 +46,7 @@ var _ error = (*Error)(nil)
 func (e *Error) Error() string {
 	prefix := ""
 	if e.Request != nil {
-		prefix = fmt.Sprintf("%s %s: ", e.Request.Method, redactURL(e.Request.URL))
+		prefix = fmt.Sprintf("%s %s: ", e.Request.Method, redact.URL(e.Request.URL))
 	}
 	return prefix + e.responseErr()
 }
@@ -88,6 +75,10 @@ func (e *Error) responseErr() string {
 
 // Temporary returns whether the request that preceded the error is temporary.
 func (e *Error) Temporary() bool {
+	if e.temporary {
+		return true
+	}
+
 	if len(e.Errors) == 0 {
 		_, ok := temporaryStatusCodes[e.StatusCode]
 		return ok
@@ -100,27 +91,11 @@ func (e *Error) Temporary() bool {
 	return true
 }
 
-// TODO(jonjohnsonjr): Consider moving to internal/redact.
-func redactURL(original *url.URL) *url.URL {
-	qs := original.Query()
-	for k, v := range qs {
-		for i := range v {
-			if _, ok := paramAllowlist[k]; !ok {
-				// key is not in the Allowlist
-				v[i] = "REDACTED"
-			}
-		}
-	}
-	redacted := *original
-	redacted.RawQuery = qs.Encode()
-	return &redacted
-}
-
 // Diagnostic represents a single error returned by a Docker registry interaction.
 type Diagnostic struct {
-	Code    ErrorCode   `json:"code"`
-	Message string      `json:"message,omitempty"`
-	Detail  interface{} `json:"detail,omitempty"`
+	Code    ErrorCode `json:"code"`
+	Message string    `json:"message,omitempty"`
+	Detail  any       `json:"detail,omitempty"`
 }
 
 // String stringifies the Diagnostic in the form: $Code: $Message[; $Detail]
@@ -136,7 +111,7 @@ func (d Diagnostic) String() string {
 type ErrorCode string
 
 // The set of error conditions a registry may return:
-// https://github.com/docker/distribution/blob/master/docs/spec/api.md#errors-2
+// https://github.com/distribution/distribution/blob/aac2f6c8b7c5a6c60190848bab5cbeed2b5ba0a9/docs/spec/api.md#errors-2
 const (
 	BlobUnknownErrorCode         ErrorCode = "BLOB_UNKNOWN"
 	BlobUploadInvalidErrorCode   ErrorCode = "BLOB_UPLOAD_INVALID"
@@ -185,21 +160,37 @@ func CheckError(resp *http.Response, codes ...int) error {
 			return nil
 		}
 	}
-	b, err := ioutil.ReadAll(resp.Body)
+
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
 
-	// https://github.com/docker/distribution/blob/master/docs/spec/api.md#errors
+	return makeError(resp, b)
+}
+
+func makeError(resp *http.Response, body []byte) *Error {
+	// https://github.com/distribution/distribution/blob/aac2f6c8b7c5a6c60190848bab5cbeed2b5ba0a9/docs/spec/api.md#errors
 	structuredError := &Error{}
 
 	// This can fail if e.g. the response body is not valid JSON. That's fine,
 	// we'll construct an appropriate error string from the body and status code.
-	_ = json.Unmarshal(b, structuredError)
+	_ = json.Unmarshal(body, structuredError)
 
-	structuredError.rawBody = string(b)
+	structuredError.rawBody = string(body)
 	structuredError.StatusCode = resp.StatusCode
 	structuredError.Request = resp.Request
 
 	return structuredError
+}
+
+func retryError(resp *http.Response) error {
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	rerr := makeError(resp, b)
+	rerr.temporary = true
+	return rerr
 }
