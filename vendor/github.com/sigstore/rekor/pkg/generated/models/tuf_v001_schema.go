@@ -23,6 +23,7 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -32,7 +33,7 @@ import (
 
 // TUFV001Schema TUF v0.0.1 Schema
 //
-// Schema for TUF metadata entries
+// # Schema for TUF metadata entries
 //
 // swagger:model tufV001Schema
 type TUFV001Schema struct {
@@ -76,11 +77,15 @@ func (m *TUFV001Schema) validateMetadata(formats strfmt.Registry) error {
 
 	if m.Metadata != nil {
 		if err := m.Metadata.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("metadata")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("metadata")
 			}
+
 			return err
 		}
 	}
@@ -96,11 +101,15 @@ func (m *TUFV001Schema) validateRoot(formats strfmt.Registry) error {
 
 	if m.Root != nil {
 		if err := m.Root.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("root")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("root")
 			}
+
 			return err
 		}
 	}
@@ -133,12 +142,17 @@ func (m *TUFV001Schema) ContextValidate(ctx context.Context, formats strfmt.Regi
 func (m *TUFV001Schema) contextValidateMetadata(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Metadata != nil {
+
 		if err := m.Metadata.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("metadata")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("metadata")
 			}
+
 			return err
 		}
 	}
@@ -149,12 +163,17 @@ func (m *TUFV001Schema) contextValidateMetadata(ctx context.Context, formats str
 func (m *TUFV001Schema) contextValidateRoot(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Root != nil {
+
 		if err := m.Root.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("root")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("root")
 			}
+
 			return err
 		}
 	}
@@ -164,7 +183,7 @@ func (m *TUFV001Schema) contextValidateRoot(ctx context.Context, formats strfmt.
 
 func (m *TUFV001Schema) contextValidateSpecVersion(ctx context.Context, formats strfmt.Registry) error {
 
-	if err := validate.ReadOnly(ctx, "spec_version", "body", string(m.SpecVersion)); err != nil {
+	if err := validate.ReadOnly(ctx, "spec_version", "body", m.SpecVersion); err != nil {
 		return err
 	}
 
@@ -195,11 +214,30 @@ func (m *TUFV001Schema) UnmarshalBinary(b []byte) error {
 type TUFV001SchemaMetadata struct {
 
 	// Specifies the metadata inline within the document
-	Content interface{} `json:"content,omitempty"`
+	// Required: true
+	Content any `json:"content"`
 }
 
 // Validate validates this TUF v001 schema metadata
 func (m *TUFV001SchemaMetadata) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateContent(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *TUFV001SchemaMetadata) validateContent(formats strfmt.Registry) error {
+
+	if m.Content == nil {
+		return errors.Required("metadata"+"."+"content", "body", nil)
+	}
+
 	return nil
 }
 
@@ -233,7 +271,7 @@ type TUFV001SchemaRoot struct {
 
 	// Specifies the metadata inline within the document
 	// Required: true
-	Content interface{} `json:"content"`
+	Content any `json:"content"`
 }
 
 // Validate validates this TUF v001 schema root

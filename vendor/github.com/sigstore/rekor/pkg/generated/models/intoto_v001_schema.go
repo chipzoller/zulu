@@ -24,6 +24,7 @@ package models
 import (
 	"context"
 	"encoding/json"
+	stderrors "errors"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -33,7 +34,7 @@ import (
 
 // IntotoV001Schema intoto v0.0.1 Schema
 //
-// Schema for intoto object
+// # Schema for intoto object
 //
 // swagger:model intotoV001Schema
 type IntotoV001Schema struct {
@@ -74,11 +75,15 @@ func (m *IntotoV001Schema) validateContent(formats strfmt.Registry) error {
 
 	if m.Content != nil {
 		if err := m.Content.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("content")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("content")
 			}
+
 			return err
 		}
 	}
@@ -112,12 +117,17 @@ func (m *IntotoV001Schema) ContextValidate(ctx context.Context, formats strfmt.R
 func (m *IntotoV001Schema) contextValidateContent(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Content != nil {
+
 		if err := m.Content.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("content")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("content")
 			}
+
 			return err
 		}
 	}
@@ -183,11 +193,15 @@ func (m *IntotoV001SchemaContent) validateHash(formats strfmt.Registry) error {
 
 	if m.Hash != nil {
 		if err := m.Hash.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("content" + "." + "hash")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("content" + "." + "hash")
 			}
+
 			return err
 		}
 	}
@@ -202,11 +216,15 @@ func (m *IntotoV001SchemaContent) validatePayloadHash(formats strfmt.Registry) e
 
 	if m.PayloadHash != nil {
 		if err := m.PayloadHash.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("content" + "." + "payloadHash")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("content" + "." + "payloadHash")
 			}
+
 			return err
 		}
 	}
@@ -235,12 +253,21 @@ func (m *IntotoV001SchemaContent) ContextValidate(ctx context.Context, formats s
 func (m *IntotoV001SchemaContent) contextValidateHash(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Hash != nil {
+
+		if swag.IsZero(m.Hash) { // not required
+			return nil
+		}
+
 		if err := m.Hash.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("content" + "." + "hash")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("content" + "." + "hash")
 			}
+
 			return err
 		}
 	}
@@ -251,12 +278,21 @@ func (m *IntotoV001SchemaContent) contextValidateHash(ctx context.Context, forma
 func (m *IntotoV001SchemaContent) contextValidatePayloadHash(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.PayloadHash != nil {
+
+		if swag.IsZero(m.PayloadHash) { // not required
+			return nil
+		}
+
 		if err := m.PayloadHash.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("content" + "." + "payloadHash")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("content" + "." + "payloadHash")
 			}
+
 			return err
 		}
 	}
@@ -282,14 +318,14 @@ func (m *IntotoV001SchemaContent) UnmarshalBinary(b []byte) error {
 	return nil
 }
 
-// IntotoV001SchemaContentHash Specifies the hash algorithm and value encompassing the entire signed envelope
+// IntotoV001SchemaContentHash Specifies the hash algorithm and value encompassing the entire signed envelope; this is computed by the rekor server, client-provided values are ignored
 //
 // swagger:model IntotoV001SchemaContentHash
 type IntotoV001SchemaContentHash struct {
 
 	// The hashing function used to compute the hash value
 	// Required: true
-	// Enum: [sha256]
+	// Enum: ["sha256"]
 	Algorithm *string `json:"algorithm"`
 
 	// The hash value for the archive
@@ -315,7 +351,7 @@ func (m *IntotoV001SchemaContentHash) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-var intotoV001SchemaContentHashTypeAlgorithmPropEnum []interface{}
+var intotoV001SchemaContentHashTypeAlgorithmPropEnum []any
 
 func init() {
 	var res []string
@@ -392,14 +428,14 @@ func (m *IntotoV001SchemaContentHash) UnmarshalBinary(b []byte) error {
 	return nil
 }
 
-// IntotoV001SchemaContentPayloadHash Specifies the hash algorithm and value covering the payload within the DSSE envelope
+// IntotoV001SchemaContentPayloadHash Specifies the hash algorithm and value covering the payload within the DSSE envelope; this is computed by the rekor server, client-provided values are ignored
 //
 // swagger:model IntotoV001SchemaContentPayloadHash
 type IntotoV001SchemaContentPayloadHash struct {
 
 	// The hashing function used to compute the hash value
 	// Required: true
-	// Enum: [sha256]
+	// Enum: ["sha256"]
 	Algorithm *string `json:"algorithm"`
 
 	// The hash value for the envelope's payload
@@ -425,7 +461,7 @@ func (m *IntotoV001SchemaContentPayloadHash) Validate(formats strfmt.Registry) e
 	return nil
 }
 
-var intotoV001SchemaContentPayloadHashTypeAlgorithmPropEnum []interface{}
+var intotoV001SchemaContentPayloadHashTypeAlgorithmPropEnum []any
 
 func init() {
 	var res []string

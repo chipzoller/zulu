@@ -70,7 +70,7 @@ func MultiSave(imgMap map[string]v1.Image, path string, opt ...Option) error {
 			if !ok {
 				return fmt.Errorf("ref wasn't a tag or digest")
 			}
-			tag = d.Repository.Tag(iWasADigestTag)
+			tag = d.Tag(iWasADigestTag)
 		}
 		tagToImage[tag] = img
 	}
@@ -133,11 +133,8 @@ func MultiSaveOCI(imgMap map[string]v1.Image, path string) error {
 			return err
 		}
 	}
-	for ref, img := range imgMap {
-		anns := map[string]string{
-			"dev.ggcr.image.name": ref,
-		}
-		if err = p.AppendImage(img, layout.WithAnnotations(anns)); err != nil {
+	for _, img := range imgMap {
+		if err = p.AppendImage(img); err != nil {
 			return err
 		}
 	}

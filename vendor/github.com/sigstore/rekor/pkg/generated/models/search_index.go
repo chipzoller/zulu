@@ -24,6 +24,7 @@ package models
 import (
 	"context"
 	"encoding/json"
+	stderrors "errors"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -41,8 +42,12 @@ type SearchIndex struct {
 	Email strfmt.Email `json:"email,omitempty"`
 
 	// hash
-	// Pattern: ^(sha256:)?[0-9a-fA-F]{64}$|^(sha1:)?[0-9a-fA-F]{40}$
+	// Pattern: ^(sha512:)?[0-9a-fA-F]{128}$|^(sha256:)?[0-9a-fA-F]{64}$|^(sha1:)?[0-9a-fA-F]{40}$
 	Hash string `json:"hash,omitempty"`
+
+	// operator
+	// Enum: ["and","or"]
+	Operator string `json:"operator,omitempty"`
 
 	// public key
 	PublicKey *SearchIndexPublicKey `json:"publicKey,omitempty"`
@@ -57,6 +62,10 @@ func (m *SearchIndex) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateHash(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateOperator(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -87,7 +96,49 @@ func (m *SearchIndex) validateHash(formats strfmt.Registry) error {
 		return nil
 	}
 
-	if err := validate.Pattern("hash", "body", m.Hash, `^(sha256:)?[0-9a-fA-F]{64}$|^(sha1:)?[0-9a-fA-F]{40}$`); err != nil {
+	if err := validate.Pattern("hash", "body", m.Hash, `^(sha512:)?[0-9a-fA-F]{128}$|^(sha256:)?[0-9a-fA-F]{64}$|^(sha1:)?[0-9a-fA-F]{40}$`); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+var searchIndexTypeOperatorPropEnum []any
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["and","or"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		searchIndexTypeOperatorPropEnum = append(searchIndexTypeOperatorPropEnum, v)
+	}
+}
+
+const (
+
+	// SearchIndexOperatorAnd captures enum value "and"
+	SearchIndexOperatorAnd string = "and"
+
+	// SearchIndexOperatorOr captures enum value "or"
+	SearchIndexOperatorOr string = "or"
+)
+
+// prop value enum
+func (m *SearchIndex) validateOperatorEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, searchIndexTypeOperatorPropEnum, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *SearchIndex) validateOperator(formats strfmt.Registry) error {
+	if swag.IsZero(m.Operator) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateOperatorEnum("operator", "body", m.Operator); err != nil {
 		return err
 	}
 
@@ -101,11 +152,15 @@ func (m *SearchIndex) validatePublicKey(formats strfmt.Registry) error {
 
 	if m.PublicKey != nil {
 		if err := m.PublicKey.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("publicKey")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("publicKey")
 			}
+
 			return err
 		}
 	}
@@ -130,12 +185,21 @@ func (m *SearchIndex) ContextValidate(ctx context.Context, formats strfmt.Regist
 func (m *SearchIndex) contextValidatePublicKey(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.PublicKey != nil {
+
+		if swag.IsZero(m.PublicKey) { // not required
+			return nil
+		}
+
 		if err := m.PublicKey.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("publicKey")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("publicKey")
 			}
+
 			return err
 		}
 	}
@@ -172,12 +236,8 @@ type SearchIndexPublicKey struct {
 
 	// format
 	// Required: true
-	// Enum: [pgp x509 minisign ssh tuf]
+	// Enum: ["pgp","x509","minisign","ssh","tuf"]
 	Format *string `json:"format"`
-
-	// url
-	// Format: uri
-	URL strfmt.URI `json:"url,omitempty"`
 }
 
 // Validate validates this search index public key
@@ -188,17 +248,13 @@ func (m *SearchIndexPublicKey) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateURL(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
 	return nil
 }
 
-var searchIndexPublicKeyTypeFormatPropEnum []interface{}
+var searchIndexPublicKeyTypeFormatPropEnum []any
 
 func init() {
 	var res []string
@@ -244,18 +300,6 @@ func (m *SearchIndexPublicKey) validateFormat(formats strfmt.Registry) error {
 
 	// value enum
 	if err := m.validateFormatEnum("publicKey"+"."+"format", "body", *m.Format); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *SearchIndexPublicKey) validateURL(formats strfmt.Registry) error {
-	if swag.IsZero(m.URL) { // not required
-		return nil
-	}
-
-	if err := validate.FormatOf("publicKey"+"."+"url", "body", "uri", m.URL.String(), formats); err != nil {
 		return err
 	}
 
